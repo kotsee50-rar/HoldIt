@@ -4,23 +4,23 @@ export function GuardedPanel({ guarded, onRun, canRun }) {
 
   return (
     <div className="rounded-2xl border-2 border-frost bg-silver/30 p-6">
-      <h2 className="mb-2 text-2xl font-bold text-shadow">TreasuryGuard Engine</h2>
+      <h2 className="mb-4 text-2xl font-bold text-shadow">TreasuryGuard Engine</h2>
       <p className="mb-6 text-sm text-shadow/70">
-        L'agente spezza l'ordine in chunk, ognuno protetto da un prezzo minimo verificato dal ledger.
+        L'Agente spezza l'ordine in chunk sicuri, protetti da un floor di prezzo on-chain.
       </p>
 
       <button
         type="button"
         onClick={onRun}
         disabled={!canRun}
-        className="mb-6 w-full rounded-xl bg-frost py-4 font-bold text-shadow transition-colors hover:bg-frost/80 disabled:cursor-not-allowed disabled:bg-pale disabled:text-ghost"
+        className="mb-6 w-full rounded-xl bg-frost py-4 font-bold text-shadow shadow-[0_0_15px_rgba(177,229,242,0.6)] transition-all hover:bg-frost/80 disabled:cursor-not-allowed disabled:bg-pale disabled:text-ghost disabled:shadow-none"
       >
-        {running ? "Esecuzione in corso..." : "Avvia esecuzione protetta"}
+        {running ? "Esecuzione in corso..." : "🛡️ Avvia Esecuzione Protetta"}
       </button>
 
       <div className="mb-3 flex items-center justify-between font-mono text-xs text-shadow">
         <span>Avanzamento {guarded.progressPct.toFixed(0)}%</span>
-        <span className="font-semibold">Slippage attuale: {guarded.slippagePct.toFixed(3)}%</span>
+        <span className="font-semibold">Slippage Attuale: {guarded.slippagePct.toFixed(3)}%</span>
       </div>
       <div className="mb-4 h-2 overflow-hidden rounded-full bg-silver">
         <div
@@ -48,9 +48,10 @@ export function GuardedPanel({ guarded, onRun, canRun }) {
   );
 }
 
-// Terminal colours from the palette: chunks and start lines in frost, everything else in ghost.
+// Terminal colours from the palette: chunks in frost, waits in silver, failures bold and underlined.
 function toneFor(text) {
   if (text.includes("[CHUNK") || text.includes("[START")) return "text-frost";
-  if (text.includes("[HALT") || text.includes("FAILED") || text.includes("[KILLED")) return "text-ghost font-bold underline";
+  if (text.includes("[WAIT")) return "text-silver italic";
+  if (text.includes("[HALT") || text.includes("FAILED") || text.includes("[KILLED")) return "font-bold text-ghost underline";
   return "text-ghost/80";
 }

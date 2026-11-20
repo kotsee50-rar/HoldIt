@@ -4,7 +4,7 @@ import { StatusBar } from "./components/StatusBar.jsx";
 import { NaivePanel } from "./components/NaivePanel.jsx";
 import { GuardedPanel } from "./components/GuardedPanel.jsx";
 
-const DEFAULT_AMOUNT = 100000;
+const DEFAULT_AMOUNT = 100000; // a smaller amount shows almost no naive slippage on the demo ladder
 const DEFAULT_SLIPPAGE = 0.5;
 
 export default function App() {
@@ -21,10 +21,10 @@ export default function App() {
   return (
     <div className="min-h-screen bg-ghost p-6 font-sans text-shadow md:p-8">
       <header className="mb-6 border-b border-silver pb-4">
-        <h1 className="text-4xl font-black text-shadow">
+        <h1 className="bg-gradient-to-r from-shadow to-frost bg-clip-text text-4xl font-black text-transparent">
           TreasuryGuard
         </h1>
-        <p className="mt-2 text-shadow/70">Execution engine per tesorerie DAO su XRPL, Testnet</p>
+        <p className="mt-2 text-shadow/70">Execution Engine for DAOs on XRPL</p>
       </header>
 
       <StatusBar state={state} />
