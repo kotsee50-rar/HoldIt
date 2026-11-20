@@ -1,6 +1,6 @@
 # IXH26-project
 
-### TreasuryGuard
+### <nome_progetto>
 Track: XRPL Application
 Target: DAO, Tesorerie Aziendali, Fondi Web3.
 Elevator Pitch: "Il primo Execution Engine nativo su XRPL che protegge le tesorerie istituzionali dallo slippage e dal front-running. Esegue ordini massivi in modo frazionato e, opzionalmente, confidenziale."
