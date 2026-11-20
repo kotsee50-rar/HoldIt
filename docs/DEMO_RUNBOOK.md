@@ -118,7 +118,7 @@ Il run completo dura circa 65–90 secondi. Il frontend deve aspettare `run:end`
 - **La liquidità è simulata.** Un market maker controllato dal progetto mantiene il ladder e lo ricarica ai prezzi configurati. Non è un mercato reale con altri operatori.
 - **I numeri sono di una prova su testnet**, non una garanzia per un run nuovo. I valori di riferimento sono 13,56% per la naive e circa 0,1% per la guarded, con mandato 0,5%.
 - **La protezione è sul ledger.** Ogni chunk ha un prezzo minimo: il ledger non esegue sotto quella soglia. Il motore non si basa solo su un controllo lato applicazione.
-- **Non dire che il sistema è resistente al MEV o al front-running.** Le transazioni e il book sono pubblici; la demo mostra il limite di prezzo, non l'invisibilità dell'ordine.
+- **Non dire che il sistema è resistente al MEV o al front-running.** Le transazioni e il book sono pubblici; la demo mostra il limite di prezzo, non l'invisibilità dell'ordine. Per le formulazioni sicure e il dibattito su XRPL, vedere `docs/PITCH_MEV_NOTE.md`.
 - **Se si usa il replay**, dirlo apertamente: la demo è riprodotta da una registrazione, non eseguita in tempo reale.
 
 ---
