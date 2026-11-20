@@ -1,1 +1,16 @@
 @import "tailwindcss";
+
+/* TreasuryGuard palette. Use these tokens only; no other colours in the UI. */
+@theme {
+  --color-ghost: #E8E9F3;   /* Ghost White: page background */
+  --color-silver: #CECECE;  /* Silver: borders, dividers, input outlines */
+  --color-pale: #A6A6A8;    /* Pale Slate: disabled states and bars at rest (low contrast on text) */
+  --color-shadow: #272635;  /* Shadow Grey: main text, primary buttons, terminal */
+  --color-frost: #B1E5F2;   /* Frosted Blue: accent, progress, guarded highlight */
+}
+
+@layer base {
+  body {
+    @apply bg-ghost text-shadow antialiased;
+  }
+}
