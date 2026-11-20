@@ -12,7 +12,8 @@
     "demo": "node demo.js",
     "server": "node server.js",
     "test": "node --test test/xrplHelpers.test.js test/server.test.js",
-    "doctor": "node doctor.js"
+    "doctor": "node doctor.js",
+    "test:live": "node --test test/live.test.js"
   },
   "keywords": [],
   "author": "",

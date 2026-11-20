@@ -142,6 +142,7 @@ Note per il frontend:
 ## Controlli
 
 - `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
+- `npm run test:live`: 4 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, e direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso. Invia transazioni reali, richiede `agent/.env` e dura circa 50 secondi. Non è incluso in `npm test`.
 - `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.
 
 ## Replay (piano B per la demo)
