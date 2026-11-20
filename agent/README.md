@@ -96,3 +96,45 @@ Per accorciare la demo ci sono due strade:
 - L'issuer deve avere `asfDefaultRipple` **prima** che esistano le trust line, altrimenti i token non passano tra i holder.
 - I codici valuta standard hanno esattamente 3 caratteri (`"TOKEN"` non è valido senza la codifica hex a 40 caratteri).
 - Le offerte non bloccano gli XRP: il saldo del market maker deve coprire l'intero ladder più le riserve.
+
+## Bridge per il frontend (`npm run server`)
+
+`server.js` espone l'engine via HTTP e Server-Sent Events, senza dipendenze extra. Ascolta su `http://127.0.0.1:8787`.
+
+| Endpoint | Cosa fa |
+|---|---|
+| `GET /health` | Stato: occupato o libero, run corrente, ultimo run concluso |
+| `GET /book` | Bid del token sul testnet e configurazione del ladder |
+| `POST /reset` | Ripristina il ladder del market maker (asincrono) |
+| `POST /execute` | Body `{ "mode": "naive" \| "guarded", "amount", "maxSlippage", "reset" }` |
+| `GET /events` | Stream SSE: `hello`, `run:start`, eventi dell'engine, `run:end` |
+
+Esempio dal browser:
+
+```js
+const events = new EventSource("http://127.0.0.1:8787/events");
+events.onmessage = (e) => {
+  const ev = JSON.parse(e.data);
+  if (ev.type === "chunk") console.log(ev.progressPct, ev.slippagePct);
+};
+await fetch("http://127.0.0.1:8787/execute", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({ mode: "naive", amount: 100000 }),
+});
+```
+
+Flusso della demo: `POST /execute` con `mode: "naive"` (ripristina il ladder, vende), poi `POST /execute` con `mode: "guarded"` (ripristina il ladder, avvia il market maker, vende).
+Un solo run alla volta: una seconda richiesta durante un run riceve `409`.
+Il server accetta richieste solo senza `Origin` (curl, script) o da `ALLOWED_ORIGINS` (default `localhost:3000`).
+Con `SERVER_HOST` lasciato al default il server non è raggiungibile dalla rete.
+
+Note per il frontend:
+- Origin consentiti di default: `http://localhost:3000` e `http://127.0.0.1:3000`. Vite usa `http://localhost:5173`: aggiungilo a `ALLOWED_ORIGINS` in `.env`.
+- Una pagina HTML aperta da file invia `Origin: null` e riceve `403`. Servi la pagina con un server locale.
+- Un `403` non espone l'header CORS, quindi il browser nasconde il corpo: il motivo è scritto nel log del server.
+- `/reset` e `POST /execute` richiedono `Content-Type: application/json`, anche con body `{}`.
+- Il campo `reset` vale solo per `mode: "naive"`. La guarded riparte sempre da un ladder nuovo.
+- Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 15-20 s, quindi mostra "preparazione mercato".
+- La vendita naive non emette eventi per chunk: per il pannello del book, fai polling di `GET /book`.
+- Il server ricarica la tesoreria automaticamente se il saldo non basta: il run non viene rifiutato.
