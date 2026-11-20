@@ -84,3 +84,6 @@ Thumbs.db
 .eslintcache
 .node_repl_history
 *.tgz
+
+# Live recordings of bridge runs (local only)
+agent/recordings/live/
