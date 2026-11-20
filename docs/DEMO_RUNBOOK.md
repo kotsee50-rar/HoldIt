@@ -29,11 +29,11 @@ Eseguire nell'ordine indicato, dalla cartella `agent/`.
 | Test sul testnet | `npm run test:live` | 5 test passati, circa 55 secondi |
 | Test avversario (facoltativo) | `npm run test:adversary` da `agent/` | 3 test passati, circa 90 secondi |
 | Test nel browser (facoltativo) | `npm run test:e2e` da `frontend/my-app/`, con bridge e dev server accesi | 6 test passati |
-| Controllo pre-demo | `npm run doctor` | "Ready" o solo warning; nessun ❌ |
+| Controllo pre-demo | `npm run doctor` | "Ready" o solo warning; nessun [FAIL] |
 | Prova della demo | Eseguire il flusso completo dal frontend | Naive e guarded completate |
 | Registrare il video di backup | Screen recording della prova completa | File salvato in un posto sicuro |
 
-Se `test:live` o `doctor` mostrano un ❌, non andare avanti: vedere la sezione 6.
+Se `test:live` o `doctor` mostrano un [FAIL], non andare avanti: vedere la sezione 6.
 
 **Nota:** `npm run test:live` consuma liquidità del ladder e lo ripristina alla fine. Non eseguirlo a ridosso della demo, per non interferire con un run in corso.
 

@@ -49,7 +49,7 @@ export async function ensureFunding(client, mm, ladder = LADDER) {
   const needed = ladderXrp(ladder) * 1.1 + reserve + 1; // 10% margin + 1 XRP for fees
   let available = balance;
   while (available < needed) {
-    console.log(`💧 Market maker balance ${available.toFixed(2)} XRP < ${needed.toFixed(2)} needed, faucet top-up...`);
+    console.log(`Market maker balance ${available.toFixed(2)} XRP < ${needed.toFixed(2)} needed, faucet top-up...`);
     available = Number(await faucetTopUp(client, mm));
   }
   return available;
@@ -67,7 +67,7 @@ export async function seedLadder(client, mm, issuer = TOKEN_ISSUER, ladder = LAD
   const seqs = new Map();
   results.slice(0, ladder.length).forEach((response, i) => {
     const code = response.result.meta.TransactionResult;
-    if (code !== "tesSUCCESS") console.warn(`⚠️  Level ${i} bid failed: ${code}`);
+    if (code !== "tesSUCCESS") console.warn(`[WARN] Level ${i} bid failed: ${code}`);
     seqs.set(i, response.result.tx_json.Sequence);
   });
   return seqs;
@@ -98,9 +98,9 @@ export function startMarketMaker(client, mm, seqs, { issuer = TOKEN_ISSUER, inte
     while (running) {
       try {
         const refilled = await refillLadder(client, mm, seqs, issuer);
-        if (refilled) log(`   🔁 Market maker refilled ${refilled} bid level(s)`);
+        if (refilled) log(`   Market maker refilled ${refilled} bid level(s)`);
       } catch (error) {
-        log(`   ⚠️  Market maker error: ${error.message}`);
+        log(`   [WARN] Market maker error: ${error.message}`);
       }
       await sleep(intervalMs);
     }
@@ -115,7 +115,7 @@ export function startMarketMaker(client, mm, seqs, { issuer = TOKEN_ISSUER, inte
 
 export function describeLadder(ladder = LADDER) {
   const depth = ladder.reduce((sum, l) => sum + l.size, 0);
-  console.log(`📚 Bid ladder: ${ladder.length} levels, ${formatIou(depth)} ${TOKEN_CURRENCY} deep, ${ladderXrp(ladder).toFixed(2)} XRP`);
+  console.log(`Bid ladder: ${ladder.length} levels, ${formatIou(depth)} ${TOKEN_CURRENCY} deep, ${ladderXrp(ladder).toFixed(2)} XRP`);
   for (const l of ladder) {
     console.log(`   L${l.level}  ${formatIou(l.size).padStart(7)} ${TOKEN_CURRENCY} @ ${l.price.toFixed(8)} XRP  (-${l.dropPct}%)`);
   }
@@ -127,7 +127,7 @@ async function main() {
   console.log(`Market maker ${marketMaker.address}`);
   describeLadder();
   const seqs = await seedLadder(client, marketMaker);
-  console.log("✅ Ladder seeded.");
+  console.log("[OK] Ladder seeded.");
   if (process.argv.includes("--seed")) {
     await client.disconnect();
     return;

@@ -99,7 +99,7 @@ Per accorciare la demo ci sono due strade:
 - `wallet.sign()` restituisce `{ tx_blob, hash }`, non `tx_json`.
 - L'issuer imposta `asfDefaultRipple` **prima** di creare le trust line. `setup.js` rispetta questo ordine: conviene non cambiarlo.
 - I codici valuta standard hanno esattamente 3 caratteri (`"TOKEN"` non è valido senza la codifica hex a 40 caratteri).
-- Le offerte non bloccano gli XRP: il saldo del market maker deve coprire l'intero ladder più le riserve.
+- Un'offerta non blocca gli XRP che offrirebbe, ma aumenta la riserva dell'account di 0,2 XRP. Il saldo del market maker deve quindi coprire il ladder, le riserve e le fee.
 
 ## Bridge per il frontend (`npm run server`)
 

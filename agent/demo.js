@@ -19,7 +19,7 @@ async function main() {
   const { issuer, treasury, marketMaker } = loadWallets();
   const depth = LADDER.reduce((sum, level) => sum + level.size, 0);
   if (amount > depth) {
-    console.warn(`⚠️  ${formatIou(amount)} is deeper than the ladder (${formatIou(depth)}): the naive sell will only fill partially.`);
+    console.warn(`[WARN] ${formatIou(amount)} is deeper than the ladder (${formatIou(depth)}): the naive sell will only fill partially.`);
   }
   await topUpTreasury(client, issuer, treasury.address, amount * 2);
 
@@ -30,7 +30,7 @@ async function main() {
   await seedLadder(client, marketMaker);
   const naive = await naiveSell(client, treasury, amount, { issuer: TOKEN_ISSUER });
   printSummary(naive);
-  console.log(`   🔴 Slippage ${naive.slippagePct.toFixed(2)}% - Value destroyed`);
+  console.log(`   Slippage ${naive.slippagePct.toFixed(2)}% - Value destroyed`);
 
   console.log("\n=== 2. The solution: TreasuryGuard ===");
   console.log("Resetting the book to the same starting state...");
@@ -38,9 +38,9 @@ async function main() {
   const mm = startMarketMaker(client, marketMaker, seqs);
   const guarded = await executeOrder(client, treasury, amount, maxSlippage);
   await mm.stop();
-  console.log(`\n🏁 Execution ${guarded.status}${guarded.reason ? ` (${guarded.reason})` : ""}, ${guarded.chunks} chunk(s)`);
+  console.log(`\nExecution ${guarded.status}${guarded.reason ? ` (${guarded.reason})` : ""}, ${guarded.chunks} chunk(s)`);
   printSummary(guarded);
-  console.log(`   🟢 Slippage ${guarded.slippagePct.toFixed(2)}% - Treasury safe`);
+  console.log(`   Slippage ${guarded.slippagePct.toFixed(2)}% - Treasury safe`);
 
   console.log("\n=== Result ===");
   console.table({

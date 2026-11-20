@@ -155,7 +155,7 @@ function saveLiveRecording(id, params, result) {
       events: recording.events,
     };
     fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
-    console.log(`💾 recording saved: ${file}`);
+    console.log(`recording saved: ${file}`);
   } catch (error) {
     console.error(`recording not saved: ${error.message}`);
   }
@@ -163,19 +163,19 @@ function saveLiveRecording(id, params, result) {
 
 function launch(work) {
   const { id, kind, params } = state.run;
-  console.log(`▶ ${kind} ${id}`);
+  console.log(`[START] ${kind} ${id}`);
   if (kind === "execute" && !params.replay) recording = { startedAt: Date.now(), events: [] };
   broadcast({ type: "run:start", runId: id, kind, params });
   work()
     .then((result) => {
       state.lastRun = { id, kind, params, ok: true, result, finishedAt: Date.now() };
-      console.log(`■ ${kind} ${id} finished`);
+      console.log(`[END] ${kind} ${id} finished`);
       if (recording) saveLiveRecording(id, params, result);
       broadcast({ type: "run:end", runId: id, kind, ok: true, result });
     })
     .catch((error) => {
       state.lastRun = { id, kind, params, ok: false, error: error.message, finishedAt: Date.now() };
-      console.error(`■ ${kind} ${id} failed: ${error.message}`);
+      console.error(`[END] ${kind} ${id} failed: ${error.message}`);
       broadcast({ type: "run:end", runId: id, kind, ok: false, error: error.message });
     })
     .finally(() => {
@@ -370,7 +370,7 @@ async function connectTestnet() {
     online = true;
     console.log(`Connected to ${NETWORK}`);
   } catch (error) {
-    console.warn(`⚠️  Testnet unavailable (${error.message}).`);
+    console.warn(`[WARN] Testnet unavailable (${error.message}).`);
     console.warn("   Starting OFFLINE: /health, /events, /replay and a static /book only.");
   }
 }

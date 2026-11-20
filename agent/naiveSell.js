@@ -84,7 +84,7 @@ async function main() {
   const amount = Number(process.argv[2] ?? DEMO_AMOUNT);
   const client = await connect();
   const { treasury } = loadWallets();
-  console.log(`\n💥 Naive market sell of ${formatIou(amount)} ${TOKEN_CURRENCY}`);
+  console.log(`\nNaive market sell of ${formatIou(amount)} ${TOKEN_CURRENCY}`);
   const summary = await naiveSell(client, treasury, amount);
   printSummary(summary);
   await client.disconnect();

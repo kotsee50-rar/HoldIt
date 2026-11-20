@@ -170,7 +170,7 @@ export async function topUpTreasury(client, issuerWallet, treasuryAddress, neede
   const balance = await getTokenBalance(client, treasuryAddress, issuerWallet.address);
   if (balance >= needed) return balance;
   const mint = Math.max(TREASURY_MINT, needed - balance);
-  console.log(`🪙 Treasury holds ${formatIou(balance)} ${TOKEN_CURRENCY}, minting ${formatIou(mint)} more...`);
+  console.log(`Treasury holds ${formatIou(balance)} ${TOKEN_CURRENCY}, minting ${formatIou(mint)} more...`);
   const result = await client.submitAndWait(
     {
       TransactionType: "Payment",
