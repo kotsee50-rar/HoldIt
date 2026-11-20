@@ -2,16 +2,16 @@
 
 Checklist operativa per il giorno della demo. Per capire il progetto leggere prima [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md); per i dettagli dei comandi, [`agent/README.md`](../agent/README.md).
 
-Il runbook assume che il frontend sia già pronto e che il suo URL sia noto. Il frontend non è descritto qui.
+Il frontend MVP è incluso in `frontend/my-app/`; per avviarlo seguire anche [`frontend/my-app/README.md`](../frontend/my-app/README.md). Mostra il book, i pannelli naive/guarded e i pulsanti per le registrazioni replay. Il book offline è un ladder statico, non un dato live.
 
 ---
 
 ## 1. Cosa serve
 
 - Un computer con **Node.js 20.19 o superiore** e connessione internet stabile. Disattivare la sospensione.
-- Il repo aggiornato a `main`, con `agent/` installato (`npm ci`).
+- Il repo aggiornato a `main`, con `agent/` e `frontend/my-app/` installati (`npm ci` in entrambe le cartelle).
 - Il file `agent/.env` con i seed del gruppo. Va ricevuto in privato, mai da git.
-- L'URL del frontend e la porta del suo dev server. Questa porta deve essere in `ALLOWED_ORIGINS`.
+- La porta del dev server frontend (default Vite: `5173`, già consentita dal bridge); per porte diverse aggiornare `ALLOWED_ORIGINS`.
 - Un video registrato della demo, come piano di emergenza.
 
 ---
@@ -22,8 +22,10 @@ Eseguire nell'ordine indicato, dalla cartella `agent/`.
 
 | Passo | Comando | Esito atteso |
 |---|---|---|
-| Aggiornare il repo | `git switch main && git pull && npm ci` | Nessun errore |
-| Test offline | `npm test` | 23 test passati |
+| Aggiornare e installare | `git switch main && git pull`; poi `npm ci` in `agent/` e `frontend/my-app/` | Nessun errore |
+| Test agente offline | `npm test` da `agent/` | 23 test passati |
+| Test frontend offline | `npm test` da `frontend/my-app/` | 16 test passati |
+| Build frontend | `npm run build` da `frontend/my-app/` | Build completata |
 | Test sul testnet | `npm run test:live` | 5 test passati, circa 55 secondi |
 | Controllo pre-demo | `npm run doctor` | "Ready" o solo warning; nessun ❌ |
 | Prova della demo | Eseguire il flusso completo dal frontend | Naive e guarded completate |
@@ -48,7 +50,7 @@ Se `test:live` o `doctor` mostrano un ❌, non andare avanti: vedere la sezione 
    curl -s http://127.0.0.1:8787/health
    ```
    Deve restituire `"online":true` e `"busy":false`.
-4. Avviare il frontend e aprire la pagina. Controllare che il pannello pubblico mostri il book.
+4. Avviare la UI dalla cartella `frontend/my-app/` con `npm ci` (una volta) e `npm run dev`. Aprire `http://localhost:5173` e verificare stato bridge, campi importo/mandato, pannelli naive/guarded, book e pulsanti replay.
 5. Tenere un solo processo di market maker. **Non** lanciare `npm run mm` in un altro terminale mentre il bridge è acceso: il bridge gestisce già il market maker durante le vendite, e due processi sugli stessi offer si sovrascrivono.
 6. **Non** lanciare `npm run setup -- --force` il giorno della demo: crea nuovi wallet e il frontend non vedrebbe più lo stesso token.
 
@@ -60,7 +62,7 @@ Usare sempre `reset` attivo per la vendita naive: il ladder deve partire pieno, 
 
 | Fase | Azione dal frontend | Durata circa | Da dire |
 |---|---|---|---|
-| 1. Il problema | Mostrare il book pubblico | 30 s | Le DAO perdono valore quando vendono in blocco. |
+| 1. Il problema | Mostrare il book e indicare la profondità disponibile | 30 s | Le DAO perdono valore quando vendono in blocco. |
 | 2. Il disastro | Vendita naive di 100.000 TGD | 15 s | Lo slippage è circa 13–14%. |
 | 3. La soluzione | Vendita guarded con mandato 0,5% | 45–50 s | Lo slippage è circa 0,1%: vendita a chunk, con prezzo minimo sul ledger. |
 | 4. Il messaggio | Confronto finale | 60 s | La liquidità è simulata: vedi la sezione 7. |
@@ -80,7 +82,7 @@ Il run completo dura circa 65–90 secondi. Il frontend deve aspettare `run:end`
    npm run server -- --offline
    ```
    Il log deve dire `--offline: testnet not contacted`. Se invece la connessione fallisce, il log dice `Testnet unavailable` e `Starting OFFLINE`.
-3. Dal frontend, o da un terminale, riprodurre le due registrazioni in sequenza. Il frontend deve mostrare anche un replay avviato da fuori UI: deve costruire la vista dagli eventi di `/events` (`run:start`, `chunk`, `run:end`), non dal `runId` della propria richiesta `POST`. Se non è così, usare un pulsante di replay dal frontend:
+3. Usare i pulsanti “Replay naive” e “Replay guarded” del frontend, oppure da un terminale riprodurre le registrazioni in sequenza. La UI ricostruisce la vista dagli eventi SSE di `/events` (`run:start`, `chunk`, `run:end`), anche quando il replay viene avviato da curl:
    ```bash
    curl -s -XPOST http://127.0.0.1:8787/replay -H 'Content-Type: application/json' -d '{"name":"demo-naive","speed":1}'
    ```

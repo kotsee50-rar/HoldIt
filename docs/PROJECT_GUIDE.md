@@ -22,20 +22,21 @@ La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto 
 - Vendita naive e motore di vendita protetta con prezzo minimo, chunk adattivi, attesa della liquidità e riepilogo dei fill.
 - Demo CLI che esegue il confronto tra le due strategie.
 - Bridge HTTP locale con endpoint per stato, book, reset, esecuzione e replay; gli aggiornamenti sono trasmessi con Server-Sent Events (SSE).
+- Frontend MVP in React e Vite con pannelli naive/guarded, campi per importo e tolleranza, book bid, replay registrati e aggiornamenti di esecuzione via SSE.
 - Controllo pre-demo (`doctor.js`) che verifica runtime, configurazione locale, connessione Testnet, wallet, liquidità e bridge.
 - Test automatici offline per helper XRPL e contratto HTTP del bridge, più test d’integrazione che inviano transazioni alla Testnet.
+- Test unitari offline del riduttore di stato del frontend.
 - Replay offline di esecuzioni registrate, con due esempi curati e salvataggio locale dei run live.
 - Runbook con preparazione, sequenza sul palco, piani di emergenza e diagnosi dei problemi.
 
 ### Non presente ancora
 
-- L’interfaccia web descritta nel pitch: `frontend/` contiene solo un segnaposto (`.gitkeep`), non un’applicazione. Il runbook presuppone quindi che la UI venga fornita o sviluppata separatamente.
 - Deposito o custodia di token da parte di utenti, gestione di mandati multiutente o un backend di produzione.
 - Protezione privata o garanzia contro front-running/MEV. L’ordine, la soglia e le transazioni XRPL restano visibili secondo il normale funzionamento del ledger.
 - Smart Escrow, XLS-0100, circuiti RISC Zero o prove ZK. Sono idee di evoluzione menzionate nel README, non componenti implementati.
-- Copertura browser/frontend o test di sistema che verifichino l’intero percorso dalla UI al ledger; i test live coprono componenti specifici, non un prodotto end-to-end completo.
+- Test browser o end-to-end UI → bridge → ledger: i test frontend attuali verificano helper e reducer con Node, non il rendering né interazioni reali nel browser.
 
-Il pitch del README di root è quindi una visione di prodotto; per capire il comportamento esistente, fare riferimento ai moduli in `agent/` e alla guida operativa in `agent/README.md`.
+Il README di root contiene il pitch e anche elementi futuri; descrive ancora lo stack frontend come Next.js, mentre l’app inclusa usa Vite. La vista book è ora implementata nell’MVP, ma mostra i bid TGD del ladder simulato, non un mercato esterno né “sell wall” indipendenti. Per lo stato implementato, fare riferimento a questa guida e ai moduli in `agent/` e `frontend/my-app/`.
 
 ## 3. Mappa della repository
 
@@ -58,19 +59,32 @@ Il pitch del README di root è quindi una visione di prodotto; per capire il com
 | `agent/test/server.test.js` | Test offline per risposte HTTP, validazione input, CORS, lock, replay e modalità offline. |
 | `agent/test/live.test.js` | Cinque test d’integrazione XRPL Testnet per ladder, vendita guarded, price floor e contratto eventi naive e guarded. |
 | `agent/test/fixtures/fill-1000.json` | Metadati validati di una vendita Testnet usati dal test unitario di `parseFill()`. |
+| `frontend/my-app/package.json` / `package-lock.json` | App separata React 19 + Vite 8, Tailwind CSS 4, ESLint e script dev/build/lint/test. |
+| `frontend/my-app/src/App.jsx` | Schermata principale: importo, mandato, stato bridge e pannelli delle due strategie. |
+| `frontend/my-app/src/lib/bridge.js` | Client browser HTTP/SSE verso il bridge; il browser non riceve i seed. |
+| `frontend/my-app/src/hooks/useBridge.js` | Apre lo stream SSE, aggiorna lo stato e invia `POST /execute`. |
+| `frontend/my-app/src/lib/runState.js` | Riduttore puro che trasforma hello/run/eventi in stato per i pannelli. |
+| `frontend/my-app/src/components/` | Barra di stato, pannelli naive/guarded, book e comandi replay. |
+| `frontend/my-app/src/components/OrderBookPanel.jsx` / `ReplayBar.jsx` | Tabella dei bid con barre di profondità e pulsanti per le due registrazioni demo. |
+| `frontend/my-app/src/hooks/useBook.js` / `src/lib/book.js` | Polling del book e trasformazione dei bid in righe e profondità. |
+| `frontend/my-app/src/lib/book.test.js` | Cinque test offline per righe, barre di profondità, limite livelli e profondità totale. |
+| `frontend/my-app/src/lib/format.js` / `format.test.js` | Formattazione italiana delle quantità TGD e relativi test. |
+| `frontend/my-app/src/lib/runState.test.js` | Nove test unitari offline per routing eventi, stati, errori e replay. |
+| `frontend/my-app/src/index.css` | Tema Tailwind e palette dell’interfaccia. |
 | `agent/recordings/demo-naive.json`, `agent/recordings/demo-guarded.json` | Registrazioni curate per riprodurre le demo senza connessione XRPL. |
 | `agent/recordings/live/` | Registrazioni create dal bridge dopo un run live; cartella esclusa da Git. |
-| `docs/DEMO_RUNBOOK.md` | Checklist operativa per il giorno della demo, inclusi piano offline e troubleshooting. Presuppone una UI esterna. |
+| `docs/DEMO_RUNBOOK.md` | Checklist operativa per il giorno della demo, inclusi uso del frontend, replay offline e troubleshooting. |
+| `docs/PITCH_MEV_NOTE.md` | Nota per il pitch: distingue le affermazioni supportate, le cautele e i limiti della demo sul tema MEV/front-running. |
 | `agent/connect-test.js` | Smoke check manuale di connessione e faucet Testnet. |
-| `docs/` | Guide e documentazione del repository; questa guida è il riferimento introduttivo. |
-| `frontend/` | Directory predisposta, ma senza implementazione applicativa al momento. |
+| `docs/` | Guida progetto, runbook operativo e nota MEV per il pitch. |
+| `frontend/my-app/src/App.css`, `src/assets/` React/Vite | File dello starter Vite attualmente non importati dall’app attiva; il layout usa classi Tailwind e la grafica del progetto. |
 
 ## 4. Architettura e dipendenze tra moduli
 
 ```mermaid
 flowchart TD
   CLI[CLI: demo / execute / naive / mm] --> CFG[config.js + agent/.env]
-  WEB[Client web locale futuro] -->|HTTP: comandi e letture| SERVER[server.js]
+  WEB[React/Vite frontend] -->|HTTP: execute / replay / book| SERVER[server.js]
   SERVER -->|SSE: stato e progressi| WEB
   SERVER --> ENGINE[executeOrder.js / naiveSell.js]
   CLI --> ENGINE
@@ -83,6 +97,8 @@ flowchart TD
 ```
 
 `config.js` è importato dai moduli e fornisce configurazione condivisa. `xrplHelpers.js` contiene le operazioni XRPL riutilizzabili. `executeOrder.js`, `naiveSell.js`, `marketMaker.js` e `server.js` possono essere importati senza avviare nulla: `isMain(import.meta.url)` fa partire `main()` solo quando il file viene eseguito direttamente. `demo.js`, `setup.js`, `doctor.js` e `connect-test.js` non hanno questa protezione: eseguono il comando appena vengono importati, quindi non vanno importati da altri moduli. Questa separazione permette a `server.js` di comporre le funzioni dell’engine.
+
+Il frontend vive nel proprio package e si installa dalla directory `frontend/my-app/`. Il browser parla soltanto col bridge HTTP locale; le credenziali wallet restano nel processo Node. Il repository non ha un package manager/workspace alla root: agent e app frontend hanno lockfile e dipendenze distinti.
 
 Dipendenze runtime dichiarate: `xrpl` 5.x e `dotenv`; il progetto richiede Node.js 20.19 o successivo. Il bridge usa `node:http` e `node:crypto` integrati in Node, senza framework HTTP aggiuntivi. I test usano `node:test` e `node:assert` integrati in Node.
 
@@ -162,7 +178,7 @@ Tutti gli eventi dell’engine hanno il campo `mode`, valorizzato a `"naive"` o 
 | `POST /replay` | Riproduce una registrazione curata senza interagire con il ledger; risponde `202`. |
 | `GET /events` | Stream SSE; invia `hello`, `run:start`, eventi dell’engine e `run:end`. |
 
-`POST /execute` accetta `{ "mode": "naive" | "guarded", "amount": numero, "maxSlippage": percentuale, "reset": boolean }`. Un solo reset o run può essere attivo; richieste concorrenti ricevono `409`. Il server verifica JSON, dimensione del body, intervalli numerici e origine browser consentita. Le richieste senza header `Origin` (ad esempio curl) sono ammesse. Le richieste `POST` devono avere `Content-Type: application/json`. Gli origin predefiniti sono localhost sulle porte 3000; per Vite è necessario aggiungere la porta effettiva a `ALLOWED_ORIGINS`.
+`POST /execute` accetta `{ "mode": "naive" | "guarded", "amount": numero, "maxSlippage": percentuale, "reset": boolean }`. Un solo reset o run può essere attivo; richieste concorrenti ricevono `409`. Il server verifica JSON, dimensione del body, intervalli numerici e origine browser consentita. Le richieste senza header `Origin` (ad esempio curl) sono ammesse. Le richieste `POST` devono avere `Content-Type: application/json`. Gli origin predefiniti includono localhost e 127.0.0.1 sulle porte 3000 e 5173, quindi Vite funziona senza modificare `ALLOWED_ORIGINS`.
 
 Il server si mette in ascolto e poi tenta la connessione XRPL e il caricamento dei wallet, con un timeout di 10 secondi; se fallisce, il server resta avviato offline. Prima dell’esecuzione live fa un top-up della tesoreria se necessario. La modalità naive ripristina il ladder per default (`reset: false` lo disabilita); la guarded parte sempre da un ladder nuovo e fa girare il market maker durante la vendita. L’evento `seeding` segnala la preparazione del book, attualmente circa 8–10 secondi sulla Testnet. Entrambe le modalità live emettono eventi di esecuzione compatibili: la naive usa un solo chunk, la guarded può usarne diversi. Per il pannello del book, il polling di `/book` resta utile.
 
@@ -181,6 +197,22 @@ Le registrazioni attualmente incluse sono esempi fissati, non dati di mercato ag
 `npm run server -- --offline` avvia il bridge senza tentare la connessione XRPL. Senza questo flag il bridge prova a connettersi per 10 secondi, poi rimane in modalità offline se la connessione fallisce. Lo stato `online` è esposto da `/health` e dall’evento SSE `hello`.
 
 In offline, `/health`, `/events` e `/replay` restano utilizzabili. `GET /book` restituisce il ladder configurato con `offline: true`, quindi è una rappresentazione statica, non il book corrente del ledger. `POST /execute` e `POST /reset` rispondono `503` e indicano di usare il replay. Per tornare online occorre riavviare il server con rete e credenziali disponibili.
+
+### Interfaccia React/Vite
+
+L’app è in `frontend/my-app/`, separata dal package Node dell’agente. Usa React per componenti e stato, Vite per dev server/build e Tailwind CSS 4 per il layout e la palette. Installazione e avvio:
+
+```bash
+cd frontend/my-app
+npm ci
+npm run dev
+```
+
+Il browser usa `VITE_BRIDGE_URL` (default `http://127.0.0.1:8787`) per `POST /execute`, `POST /replay`, `GET /book` e `GET /events`. `bridge.js` incapsula fetch JSON, letture JSON e `EventSource`; `useBridge.js` collega lo stream al reducer `runState.js`. Il browser non importa `xrpl.js` e non riceve seed.
+
+`App.jsx` propone quantità iniziale 100.000 TGD e mandato 0,5%, e disabilita i pulsanti di vendita mentre il bridge è disconnesso, offline o occupato. `StatusBar` mostra la connessione; `NaivePanel` presenta fill e slippage della vendita singola; `GuardedPanel` presenta progress bar, slippage e log dei chunk. `OrderBookPanel` mostra i bid in tabella, profondità per livello e profondità aggregata; `useBook` legge `GET /book` all’avvio, ogni 3 secondi e dopo la fine di un run. In offline il bridge restituisce un ladder configurato, marcato `offline: true`, non dati live.
+
+`ReplayBar` offre replay naive e guarded, chiamando `POST /replay` tramite `useBridge`; i pulsanti funzionano anche offline quando il bridge è connesso e libero. Il reducer separa le strategie tramite `mode`, ricostruisce i run da `hello` e dagli eventi, ignora i run di solo `reset` e mostra gli errori HTTP o di rete. `formatTokens()` rende i gruppi delle migliaia in formato italiano. I 16 test frontend sono unitari Node per stato, trasformazione book e formattazione; non ci sono test DOM/browser. I comandi sono `npm run dev`, `npm run build`, `npm run lint` e `npm test`.
 
 ## 9. Avvio e comandi
 
@@ -211,6 +243,8 @@ npm run demo
 | `npm run test:live` | Esegue 5 test d’integrazione su Testnet; richiede seed in `.env`, invia transazioni e ripristina il ladder alla fine. Dura circa 55 secondi e non è incluso in `npm test`. |
 | `npm run doctor` | Controlla se ambiente e Testnet sono pronti per la demo; warning non bloccanti non causano codice d’uscita 1. |
 
+Dal frontend, in `frontend/my-app/`, `npm test` esegue 16 test unitari offline, `npm run build` crea `dist/` e `npm run lint` lancia ESLint. Questi comandi hanno package e dipendenze indipendenti da `agent/`.
+
 Il risultato numerico riportato in `agent/README.md` è un esempio registrato su Testnet, non un benchmark stabile: book, validazione, faucet e stato di rete possono variare.
 
 ## 10. Configurazione
@@ -234,6 +268,8 @@ Le variabili sono lette da `agent/.env`; i default e i commenti sono in `agent/.
 
 I valori di `LADDER_DROPS_PCT` e `LADDER_SIZES` devono avere lo stesso numero di elementi. Il totale token del ladder è la somma delle size; gli XRP necessari dipendono da `size × price` per ogni livello, oltre a riserve ledger e fee.
 
+Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:8787`) per indirizzare il client web al bridge.
+
 ## 11. Note operative e limiti interpretativi
 
 - **Il refill è l’assunzione centrale della demo.** Prezzi fissi e liquidità rigenerata sono intenzionali, ma non descrivono un market maker esterno che accetta di ricomprare a quei livelli.
@@ -242,7 +278,7 @@ I valori di `LADDER_DROPS_PCT` e `LADDER_SIZES` devono avere lo stesso numero di
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
 - **Il refill e i test di rete dipendono da Testnet e faucet.** Il faucet può essere rate-limited; il codice tenta il top-up e restituisce un errore leggibile se fallisce.
 - **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV. Sul rischio di front-running su XRPL, oggetto di un dibattito pubblico nel 2026, vedere `docs/PITCH_MEV_NOTE.md`.
-- **Portata dei test.** `npm test` esegue 23 test offline, inclusa la lettura di un fixture di metadata reale. `npm run test:live` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto e eventi naive), richiede seed e modifica temporaneamente il ledger di test; non copre il frontend né un flusso UI end-to-end.
+- **Portata dei test.** `npm test` eseguito da `agent/` copre 23 casi offline, inclusa la lettura di un fixture di metadata reale; lo stesso comando da `frontend/my-app/` copre 16 test unitari di stato, book e formattazione. `npm run test:live` da `agent/` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto ed eventi naive/guarded), richiede seed e modifica temporaneamente il ledger di test. Nessuna suite automatizza un browser o l’intero flusso UI → bridge → ledger.
 - **Credenziali.** `agent/.env` è escluso da Git. Conservare solo seed Testnet e non condividere il file.
 
 ## 12. Come mantenere questa guida
