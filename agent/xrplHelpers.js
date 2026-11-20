@@ -61,14 +61,15 @@ export async function getBids(client, issuerAddress, limit = 50) {
     taker_pays: { currency: TOKEN_CURRENCY, issuer: issuerAddress },
     limit,
   });
-  return response.result.offers
-    .map((offer) => {
-      // *_funded fields appear when the owner cannot fully fund the offer.
-      const drops = Number(offer.taker_gets_funded ?? offer.TakerGets);
-      const tokens = Number((offer.taker_pays_funded ?? offer.TakerPays).value);
-      return { owner: offer.Account, tokens, xrp: drops / 1e6, price: drops / 1e6 / tokens };
-    })
-    .filter((bid) => bid.tokens > 0 && bid.xrp > 0);
+  return response.result.offers.map(bidFromOffer).filter((bid) => bid.tokens > 0 && bid.xrp > 0);
+}
+
+/** Converts one book_offers entry (XRP sold, TOKEN bought) into { owner, tokens, xrp, price }. */
+export function bidFromOffer(offer) {
+  // *_funded fields appear when the owner cannot fully fund the offer.
+  const drops = Number(offer.taker_gets_funded ?? offer.TakerGets);
+  const tokens = Number((offer.taker_pays_funded ?? offer.TakerPays).value);
+  return { owner: offer.Account, tokens, xrp: drops / 1e6, price: drops / 1e6 / tokens };
 }
 
 /**
