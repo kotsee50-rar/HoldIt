@@ -10,7 +10,9 @@
     "naive": "node naiveSell.js",
     "execute": "node executeOrder.js",
     "demo": "node demo.js",
-    "server": "node server.js"
+    "server": "node server.js",
+    "test": "node --test test/xrplHelpers.test.js test/server.test.js",
+    "doctor": "node doctor.js"
   },
   "keywords": [],
   "author": "",
