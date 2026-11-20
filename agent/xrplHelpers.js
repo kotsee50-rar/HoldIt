@@ -3,7 +3,7 @@
 import xrpl from "xrpl";
 import fs from "node:fs";
 import { pathToFileURL } from "node:url";
-import { NETWORK, SEEDS, TOKEN_CURRENCY } from "./config.js";
+import { NETWORK, SEEDS, TOKEN_CURRENCY, TREASURY_MINT } from "./config.js";
 
 export const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
@@ -150,4 +150,27 @@ export async function faucetTopUp(client, wallet) {
   } catch (error) {
     throw new Error(`Faucet top-up failed for ${wallet.address} (rate limited?): ${error.message}`);
   }
+}
+
+/**
+ * Make sure the treasury holds at least `needed` tokens. If not, the issuer mints
+ * max(TREASURY_MINT, shortfall) to it. Returns the balance afterwards.
+ */
+export async function topUpTreasury(client, issuerWallet, treasuryAddress, needed) {
+  const balance = await getTokenBalance(client, treasuryAddress, issuerWallet.address);
+  if (balance >= needed) return balance;
+  const mint = Math.max(TREASURY_MINT, needed - balance);
+  console.log(`🪙 Treasury holds ${formatIou(balance)} ${TOKEN_CURRENCY}, minting ${formatIou(mint)} more...`);
+  const result = await client.submitAndWait(
+    {
+      TransactionType: "Payment",
+      Account: issuerWallet.address,
+      Destination: treasuryAddress,
+      Amount: tokenAmount(issuerWallet.address, mint),
+    },
+    { wallet: issuerWallet, autofill: true },
+  );
+  const code = result.result.meta.TransactionResult;
+  if (code !== "tesSUCCESS") throw new Error(`mint failed: ${code}`);
+  return getTokenBalance(client, treasuryAddress, issuerWallet.address);
 }
