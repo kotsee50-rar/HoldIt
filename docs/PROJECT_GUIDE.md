@@ -21,18 +21,19 @@ La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto 
 - Market maker dimostrativo che pubblica un ladder di bid a prezzi configurati e ripristina i livelli consumati.
 - Vendita naive e motore di vendita protetta con prezzo minimo, chunk adattivi, attesa della liquidità e riepilogo dei fill.
 - Demo CLI che esegue il confronto tra le due strategie.
-- Bridge HTTP locale con endpoint per stato, book, reset ed esecuzione; gli aggiornamenti dell’agente sono trasmessi con Server-Sent Events (SSE).
+- Bridge HTTP locale con endpoint per stato, book, reset, esecuzione e replay; gli aggiornamenti sono trasmessi con Server-Sent Events (SSE).
 - Controllo pre-demo (`doctor.js`) che verifica runtime, configurazione locale, connessione Testnet, wallet, liquidità e bridge.
-- Test automatici offline per helper XRPL e contratto HTTP di validazione/accesso del bridge.
+- Test automatici offline per helper XRPL e contratto HTTP del bridge, più test d’integrazione che inviano transazioni alla Testnet.
 - Replay offline di esecuzioni registrate, con due esempi curati e salvataggio locale dei run live.
+- Runbook con preparazione, sequenza sul palco, piani di emergenza e diagnosi dei problemi.
 
 ### Non presente ancora
 
-- L’interfaccia web descritta nel pitch: `frontend/` contiene solo un segnaposto (`.gitkeep`), non un’applicazione.
+- L’interfaccia web descritta nel pitch: `frontend/` contiene solo un segnaposto (`.gitkeep`), non un’applicazione. Il runbook presuppone quindi che la UI venga fornita o sviluppata separatamente.
 - Deposito o custodia di token da parte di utenti, gestione di mandati multiutente o un backend di produzione.
 - Protezione privata o garanzia contro front-running/MEV. L’ordine, la soglia e le transazioni XRPL restano visibili secondo il normale funzionamento del ledger.
 - Smart Escrow, XLS-0100, circuiti RISC Zero o prove ZK. Sono idee di evoluzione menzionate nel README, non componenti implementati.
-- Copertura automatizzata end-to-end sul ledger: i test attuali sono offline e non verificano transazioni reali, esecuzioni complete o comportamento del market maker su Testnet.
+- Copertura browser/frontend o test di sistema che verifichino l’intero percorso dalla UI al ledger; i test live coprono componenti specifici, non un prodotto end-to-end completo.
 
 Il pitch del README di root è quindi una visione di prodotto; per capire il comportamento esistente, fare riferimento ai moduli in `agent/` e alla guida operativa in `agent/README.md`.
 
@@ -55,8 +56,11 @@ Il pitch del README di root è quindi una visione di prodotto; per capire il com
 | `agent/doctor.js` | Controlli di preparazione prima della demo; termina con codice 1 se trova un blocco. |
 | `agent/test/xrplHelpers.test.js` | Test offline per conversioni, costruzione IOU, prezzo dei bid e gestione di fill uccisi. |
 | `agent/test/server.test.js` | Test offline per risposte HTTP, validazione input, CORS, lock, replay e modalità offline. |
+| `agent/test/live.test.js` | Cinque test d’integrazione XRPL Testnet per ladder, vendita guarded, price floor e contratto eventi naive e guarded. |
+| `agent/test/fixtures/fill-1000.json` | Metadati validati di una vendita Testnet usati dal test unitario di `parseFill()`. |
 | `agent/recordings/demo-naive.json`, `agent/recordings/demo-guarded.json` | Registrazioni curate per riprodurre le demo senza connessione XRPL. |
 | `agent/recordings/live/` | Registrazioni create dal bridge dopo un run live; cartella esclusa da Git. |
+| `docs/DEMO_RUNBOOK.md` | Checklist operativa per il giorno della demo, inclusi piano offline e troubleshooting. Presuppone una UI esterna. |
 | `agent/connect-test.js` | Smoke check manuale di connessione e faucet Testnet. |
 | `docs/` | Guide e documentazione del repository; questa guida è il riferimento introduttivo. |
 | `frontend/` | Directory predisposta, ma senza implementazione applicativa al momento. |
@@ -106,14 +110,14 @@ Un `OfferCreate` specifica cosa l’account cede (`TakerGets`) e cosa vuole rice
 
 ### IOC, Sell e validazione
 
-Le vendite usano `tfImmediateOrCancel` (IOC): l’offerta viene eseguita subito per la parte abbinabile e la parte restante viene annullata, quindi non resta come ordine aperto nel book. `tfSell` indica che l’ordine vende l’intero importo `TakerGets`, anche se ottiene più XRP dell’importo richiesto in `TakerPays`.
+Le vendite usano `tfImmediateOrCancel` (IOC): l’offerta viene eseguita subito per la parte abbinabile e la parte restante viene annullata, quindi non resta come ordine aperto nel book. `tfSell` indica che l’ordine vende l’intero importo `TakerGets`, anche se ottiene più XRP dell’importo richiesto in `TakerPays`. Senza `tfSell`, invece, l’ordine si ferma appena ha ricevuto l’importo `TakerPays`: nel test del 20/11/2026, con 0,05 XRP come minimo, ha venduto 500 token invece di 1.000.
 
 Le transazioni vengono inviate al ledger e poi misurate dai metadati validati. `parseFill()` usa `xrpl.getBalanceChanges()` per determinare quanti token sono usciti e quanti XRP sono entrati; riaggiunge la fee XRP alla variazione di saldo per stimare i proventi della vendita al lordo della fee. Questo evita di basare il riepilogo soltanto su quantità richieste o prezzi teorici.
 
 ## 6. I tre wallet e il ciclo della demo
 
 1. `npm run setup` crea **issuer**, **treasury** e **market maker** tramite faucet Testnet. Finanzia anche il market maker per sostenere gli XRP del ladder e le riserve di account.
-2. L’issuer crea le trust line e invia TGD alla tesoreria.
+2. Tesoreria e market maker creano le trust line verso l’issuer; l’issuer invia TGD alla tesoreria.
 3. `seedLadder()` pubblica un livello di bid per ogni configurazione in `LADDER`. Il market maker usa `OfferSequence` per sostituire atomicamente gli ordini esistenti dove possibile e cancella eventuali offerte in eccesso.
 4. La vendita naive consuma il book con un unico IOC. Poiché il ladder ha livelli più bassi, un ordine grande può ricevere un prezzo medio inferiore al miglior bid iniziale.
 5. La demo ripristina il ladder e avvia il ciclo di refill del market maker. L’engine guarded esegue chunk limitati dal prezzo minimo mentre il market maker reintegra i livelli consumati ai prezzi configurati.
@@ -139,36 +143,38 @@ La soglia on-chain limita il prezzo accettato per i chunk. L’engine può comun
 
 ### Strategia naive
 
-`naiveSell()` usa un singolo ordine IOC + Sell per tutti i token richiesti e imposta `TakerPays: "1"` drop: in pratica non impone una soglia economica significativa. Può quindi attraversare più livelli del book fino alla quantità disponibile. La funzione restituisce i dati osservati dai metadati, il prezzo di riferimento iniziale e lo slippage rispetto a quel riferimento.
+`naiveSell()` usa un singolo ordine IOC + Sell per tutti i token richiesti e imposta `TakerPays: "1"` drop: in pratica non impone una soglia economica significativa. Può quindi attraversare più livelli del book fino alla quantità disponibile. La funzione restituisce i dati osservati dai metadati, il prezzo di riferimento iniziale e lo slippage rispetto a quel riferimento. Nel suo riepilogo `status: "completed"` significa che c’è stato un fill; non garantisce che sia stata venduta tutta la quantità. Confrontare sempre `sold` con `totalAmount`.
 
 ## 8. Eventi dell’engine e bridge web
 
-`executeOrder()` accetta `onEvent`; per impostazione predefinita `logEvent()` stampa gli eventi nel terminale. Gli eventi principali sono `start`, `waiting`, `killed`, `chunk`, `halt` e `done`. L’evento `chunk` include progresso, quantità, XRP ricevuti, prezzo medio, slippage e hash della transazione.
+`executeOrder()` accetta `onEvent`; per impostazione predefinita `logEvent()` stampa gli eventi nel terminale. Gli eventi guarded sono `start`, `waiting`, `killed`, `chunk`, `halt` e `done`; `chunk` include progresso, quantità, XRP ricevuti, prezzo medio, slippage e hash della transazione. Anche `naiveSell()` accetta `onEvent` e restituisce la stessa forma utile al client: `start`, un singolo `chunk` se c’è un fill, e `done`. In caso di zero fill restituisce `status: "halted"` e non emette `chunk`.
+
+Tutti gli eventi dell’engine hanno il campo `mode`, valorizzato a `"naive"` o `"guarded"`; anche l’evento `seeding` del bridge identifica la modalità. Il client può quindi instradare gli aggiornamenti in base a `mode`, indipendentemente da quale schermata o richiesta li abbia avviati. Nell’evento `start` naive, `maxSlippagePercent` è `null` e `minPrice` è `0`: quella modalità non ha un floor, quindi il client non deve formattare il valore nullo come numero.
 
 `server.js` espone una piccola API locale:
 
 | Metodo e percorso | Comportamento |
 |---|---|
-| `GET /health` | Stato occupato/libero, run corrente, ultimo run e numero di subscriber SSE. |
+| `GET /health` | Stato online/offline e occupato/libero, run corrente, ultimo run e numero di subscriber SSE. |
 | `GET /book` | Bid correnti e configurazione del ladder. |
 | `POST /reset` | Ripubblica il ladder in background; risponde `202` con `runId`. |
 | `POST /execute` | Avvia modalità `naive` o `guarded`; risponde `202` e trasmette l’avanzamento. |
 | `POST /replay` | Riproduce una registrazione curata senza interagire con il ledger; risponde `202`. |
 | `GET /events` | Stream SSE; invia `hello`, `run:start`, eventi dell’engine e `run:end`. |
 
-`POST /execute` accetta `{ "mode": "naive" | "guarded", "amount": numero, "maxSlippage": percentuale, "reset": boolean }`. Un solo reset o run può essere attivo; richieste concorrenti ricevono `409`. Il server verifica JSON, dimensione del body, intervalli numerici e origine browser consentita. Le richieste senza header `Origin` (ad esempio curl) sono ammesse. Gli origin predefiniti sono localhost sulle porte 3000; per Vite è necessario aggiungere la porta effettiva a `ALLOWED_ORIGINS`.
+`POST /execute` accetta `{ "mode": "naive" | "guarded", "amount": numero, "maxSlippage": percentuale, "reset": boolean }`. Un solo reset o run può essere attivo; richieste concorrenti ricevono `409`. Il server verifica JSON, dimensione del body, intervalli numerici e origine browser consentita. Le richieste senza header `Origin` (ad esempio curl) sono ammesse. Le richieste `POST` devono avere `Content-Type: application/json`. Gli origin predefiniti sono localhost sulle porte 3000; per Vite è necessario aggiungere la porta effettiva a `ALLOWED_ORIGINS`.
 
-Il server avvia una connessione XRPL e carica i wallet all’avvio. Il tentativo di connessione ha un timeout di 10 secondi; se fallisce, il server resta avviato offline. Prima dell’esecuzione live fa un top-up della tesoreria se necessario. La modalità naive ripristina il ladder per default (`reset: false` lo disabilita); la modalità guarded parte sempre da un ladder nuovo e fa girare il market maker durante la vendita. L’evento `seeding` segnala l’attesa di preparazione del book, attualmente circa 8–10 secondi sulla Testnet. La modalità naive non produce progressi per chunk: un client può aggiornare il book facendo polling di `/book`.
+Il server si mette in ascolto e poi tenta la connessione XRPL e il caricamento dei wallet, con un timeout di 10 secondi; se fallisce, il server resta avviato offline. Prima dell’esecuzione live fa un top-up della tesoreria se necessario. La modalità naive ripristina il ladder per default (`reset: false` lo disabilita); la guarded parte sempre da un ladder nuovo e fa girare il market maker durante la vendita. L’evento `seeding` segnala la preparazione del book, attualmente circa 8–10 secondi sulla Testnet. Entrambe le modalità live emettono eventi di esecuzione compatibili: la naive usa un solo chunk, la guarded può usarne diversi. Per il pannello del book, il polling di `/book` resta utile.
 
 Il bridge è pensato per sviluppo locale, non è un servizio multiutente o un endpoint di produzione. `SERVER_HOST` è `127.0.0.1` per default; gli origin ammessi non sostituiscono un sistema di autenticazione se il servizio venisse esposto oltre il computer locale.
 
 ### Registrazione e replay
 
-Durante un’esecuzione live, il bridge registra gli eventi engine con il tempo trascorso, i parametri e il risultato finale. Al completamento salva un JSON in `agent/recordings/live/`, escluso da Git. Le registrazioni curate nella radice di `agent/recordings/` vengono servite da `POST /replay`; i nomi accettano solo lettere, numeri e trattini, così non possono selezionare percorsi arbitrari.
+Durante un’esecuzione live, il bridge registra gli eventi engine con il tempo trascorso, i parametri e il risultato finale. Al completamento riuscito salva un JSON in `agent/recordings/live/`, escluso da Git. I run falliti non vengono salvati, e i replay non vengono registrati di nuovo. Le registrazioni curate nella radice di `agent/recordings/` vengono servite da `POST /replay`; i nomi accettano solo lettere, numeri e trattini, così non possono selezionare percorsi arbitrari.
 
 Il body è `{ "name": "demo-guarded", "speed": 1 }`. `speed` deve essere maggiore di 0 e al massimo 100; il default è 1. Gli intervalli lunghi sono comunque accorciati a 2,5 secondi, quindi il replay mantiene la forma temporale degli eventi ma può essere più breve della registrazione originale. Il replay acquisisce il lock come `kind: "execute"`, conserva la forma generale dei parametri live e termina con `run:end`; il frontend può riutilizzare il normale flusso SSE.
 
-Le registrazioni attualmente incluse sono esempi fissati, non dati di mercato aggiornati. `demo-naive` registra 100.000 TGD venduti, 8,644 XRP ricevuti e circa 13,56% di slippage. `demo-guarded` registra 100.000 TGD venduti in 5 chunk, 9,99 XRP ricevuti e circa 0,10% di slippage con mandato 0,5%. Sono riproduzioni di demo su Testnet con liquidità simulata, non risultati garantiti per un run nuovo.
+Le registrazioni attualmente incluse sono esempi fissati, non dati di mercato aggiornati. `demo-naive` registra 100.000 TGD venduti, 8,644 XRP ricevuti e circa 13,56% di slippage; la registrazione ora include gli eventi `seeding`, `start`, `chunk` e `done`, tutti marcati `mode: "naive"`. `demo-guarded` registra 100.000 TGD venduti in 6 chunk, 9,99 XRP ricevuti e circa 0,11% di slippage con mandato 0,5%; anche i suoi eventi identificano `mode: "guarded"`. Sono riproduzioni di demo su Testnet con liquidità simulata, non risultati garantiti per un run nuovo.
 
 ### Modalità offline
 
@@ -202,6 +208,7 @@ npm run demo
 | `npm run server` | Avvia il bridge locale su `127.0.0.1:8787`. |
 | `npm run server -- --offline` | Avvia il bridge senza contattare Testnet; disponibile il replay e un book statico. |
 | `npm test` | Esegue i test offline definiti in `agent/test/`; non invia transazioni né contatta il ledger. |
+| `npm run test:live` | Esegue 5 test d’integrazione su Testnet; richiede seed in `.env`, invia transazioni e ripristina il ladder alla fine. Dura circa 55 secondi e non è incluso in `npm test`. |
 | `npm run doctor` | Controlla se ambiente e Testnet sono pronti per la demo; warning non bloccanti non causano codice d’uscita 1. |
 
 Il risultato numerico riportato in `agent/README.md` è un esempio registrato su Testnet, non un benchmark stabile: book, validazione, faucet e stato di rete possono variare.
@@ -234,8 +241,8 @@ I valori di `LADDER_DROPS_PCT` e `LADDER_SIZES` devono avere lo stesso numero di
 - **Fill parziale non equivale a ordine completato.** Controllare `status`, `reason` e quantità `sold` rispetto a `totalAmount`.
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
 - **Il refill e i test di rete dipendono da Testnet e faucet.** Il faucet può essere rate-limited; il codice tenta il top-up e restituisce un errore leggibile se fallisce.
-- **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV.
-- **Portata dei test.** I test coprono funzioni pure e percorsi HTTP di validazione/accesso, replay e comportamento offline; non sostituiscono una prova d’integrazione con wallet, transazioni e book reali su Testnet.
+- **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV. Sul rischio di front-running su XRPL, oggetto di un dibattito pubblico nel 2026, vedere `docs/PITCH_MEV_NOTE.md`.
+- **Portata dei test.** `npm test` esegue 23 test offline, inclusa la lettura di un fixture di metadata reale. `npm run test:live` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto e eventi naive), richiede seed e modifica temporaneamente il ledger di test; non copre il frontend né un flusso UI end-to-end.
 - **Credenziali.** `agent/.env` è escluso da Git. Conservare solo seed Testnet e non condividere il file.
 
 ## 12. Come mantenere questa guida
