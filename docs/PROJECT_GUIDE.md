@@ -34,7 +34,7 @@ La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto 
 - Deposito o custodia di token da parte di utenti, gestione di mandati multiutente o un backend di produzione.
 - Protezione privata o garanzia contro front-running/MEV. L’ordine, la soglia e le transazioni XRPL restano visibili secondo il normale funzionamento del ledger.
 - Smart Escrow, XLS-0100, circuiti RISC Zero o prove ZK. Sono idee di evoluzione menzionate nel README, non componenti implementati.
-- Test browser o end-to-end UI → bridge → ledger: i test frontend attuali verificano helper e reducer con Node, non il rendering né interazioni reali nel browser.
+- Esecuzione automatica dei test in CI: nessuna pipeline lancia i test. I test live, avversario e del browser vanno eseguiti a mano, perché inviano transazioni reali sul testnet.
 
 Il README di root contiene il pitch e anche elementi futuri; descrive ancora lo stack frontend come Next.js, mentre l’app inclusa usa Vite. La vista book è ora implementata nell’MVP, ma mostra i bid TGD del ladder simulato, non un mercato esterno né “sell wall” indipendenti. Per lo stato implementato, fare riferimento a questa guida e ai moduli in `agent/` e `frontend/my-app/`.
 
@@ -146,7 +146,7 @@ Il market maker non rappresenta domanda indipendente: è un attore controllato d
 In `executeOrder(client, wallet, totalAmount, maxSlippagePercent, options)`, i valori percentuali sono espressi come numeri percentuali: `0.5` significa 0,5%.
 
 1. **Controllo saldo e book**: legge il saldo token della tesoreria e rifiuta quantità superiori; poi legge i bid. Un book vuoto interrompe l’esecuzione.
-2. **Prezzo di riferimento**: prende il miglior bid iniziale, `referencePrice`.
+2. **Prezzo di riferimento**: di default è il miglior bid iniziale. L’opzione `referencePrice` lo ancora a un prezzo scelto prima della vendita; bridge e demo usano ancora il default, vedere la sezione 11.
 3. **Price floor**: calcola `minPrice = referencePrice × (1 − maxSlippagePercent / 100)`. Per esempio con 0,5%, la vendita non accetta offerte inferiori al 99,5% del prezzo di riferimento.
 4. **Liquidità in banda**: prima di ogni chunk rilegge i bid ed esclude quelli posseduti dalla tesoreria. Somma i token disponibili con prezzo `>= minPrice`.
 5. **Attesa o stop**: se la liquidità sicura è inferiore al minimo necessario, aspetta e ripete la lettura ogni `POLL_MS`. Se non torna entro `LIQUIDITY_TIMEOUT_MS`, termina `halted`, potenzialmente con fill parziale.
@@ -242,6 +242,7 @@ npm run demo
 | `npm test` | Esegue i test offline definiti in `agent/test/`; non invia transazioni né contatta il ledger. |
 | `npm run test:live` | Esegue 5 test d’integrazione su Testnet; richiede seed in `.env`, invia transazioni e ripristina il ladder alla fine. Dura circa 55 secondi e non è incluso in `npm test`. |
 | `npm run doctor` | Controlla se ambiente e Testnet sono pronti per la demo; warning non bloccanti non causano codice d’uscita 1. |
+| `npm run test:adversary` | Esegue 3 test sul testnet: un attaccante svuota i bid prima della vendita guarded. Verifica che il floor ancorato blocchi la vendita e documenta il limite del riferimento di default. Circa 90 secondi. |
 
 Dal frontend, in `frontend/my-app/`, `npm test` esegue 16 test unitari offline, `npm run build` crea `dist/` e `npm run lint` lancia ESLint. Questi comandi hanno package e dipendenze indipendenti da `agent/`.
 
@@ -275,10 +276,11 @@ Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:
 - **Il refill è l’assunzione centrale della demo.** Prezzi fissi e liquidità rigenerata sono intenzionali, ma non descrivono un market maker esterno che accetta di ricomprare a quei livelli.
 - **Slippage qui è una metrica relativa al miglior bid iniziale.** Il codice calcola `(referencePrice - avgPrice) / referencePrice × 100`. Può risultare negativo se il prezzo medio supera il riferimento.
 - **Fill parziale non equivale a ordine completato.** Controllare `status`, `reason` e quantità `sold` rispetto a `totalAmount`.
+- **Il riferimento va ancorato contro chi muove il book prima della vendita.** Di default il riferimento è il miglior bid all’avvio: se un attaccante ha già svuotato i livelli alti, il floor scende con il mercato. `npm run test:adversary` lo dimostra sul testnet. Con `referencePrice` esplicito il floor resta quello del mandato, e la vendita si ferma senza vendere sotto. Bridge e demo non usano ancora un riferimento ancorato: è una decisione da prendere.
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
 - **Il refill e i test di rete dipendono da Testnet e faucet.** Il faucet può essere rate-limited; il codice tenta il top-up e restituisce un errore leggibile se fallisce.
 - **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV. Sul rischio di front-running su XRPL, oggetto di un dibattito pubblico nel 2026, vedere `docs/PITCH_MEV_NOTE.md`.
-- **Portata dei test.** `npm test` eseguito da `agent/` copre 23 casi offline, inclusa la lettura di un fixture di metadata reale; lo stesso comando da `frontend/my-app/` copre 16 test unitari di stato, book e formattazione. `npm run test:live` da `agent/` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto ed eventi naive/guarded), richiede seed e modifica temporaneamente il ledger di test. Nessuna suite automatizza un browser o l’intero flusso UI → bridge → ledger.
+- **Portata dei test.** `npm test` eseguito da `agent/` copre 23 casi offline, inclusa la lettura di un fixture di metadata reale; lo stesso comando da `frontend/my-app/` copre 16 test unitari di stato, book e formattazione. `npm run test:live` da `agent/` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto ed eventi naive/guarded), richiede seed e modifica temporaneamente il ledger di test. Il test nel browser (`npm run test:e2e` in `frontend/my-app/`) e il test avversario (`npm run test:adversary` in `agent/`) sono suite separate, lanciate a mano, con transazioni reali sul testnet.
 - **Credenziali.** `agent/.env` è escluso da Git. Conservare solo seed Testnet e non condividere il file.
 
 ## 12. Come mantenere questa guida
