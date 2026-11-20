@@ -34,8 +34,10 @@ npm run demo        # confronto completo: vendita naive vs TreasuryGuard
 
 | | Venduti | XRP ricevuti | Slippage | Tempo |
 |---|---|---|---|---|
-| Naive market sell | 100.000 TGD | 8,644 | 13,56% | 4 s |
-| TreasuryGuard (max 0,5%) | 100.000 TGD | 9,988 | 0,12% | 47 s |
+| Naive market sell | 100.000 TGD | 8,644 | 13,56% | 7 s |
+| TreasuryGuard (max 0,5%) | 100.000 TGD | 9,989 | 0,11% | 47 s |
+
+Demo completa su un clone pulito di `main`, 20/11/2026: 78 s in tutto. Le cifre cambiano a ogni run, perché il book e la rete cambiano.
 
 ## Come funziona
 
@@ -69,13 +71,15 @@ const { treasury } = loadWallets();
 const summary = await executeOrder(client, treasury, 100000, 0.5, {
   onEvent: (event) => {
     // event.type: "start" | "chunk" | "waiting" | "killed" | "halt" | "done"
+    // event.mode: "guarded" (presente su tutti questi eventi)
     // "chunk" contiene progressPct, avgPrice, slippagePct, hash...
   },
 });
 ```
 
-`naiveSell(client, wallet, amount)` restituisce un riepilogo con la stessa forma.
-Importare i file non avvia nulla: il `main()` parte solo con `node file.js`.
+`naiveSell(client, wallet, amount, { onEvent })` restituisce un riepilogo con la stessa forma e accetta `onEvent` allo stesso modo: emette `start`, `chunk` e `done`.
+
+Importare `executeOrder.js`, `naiveSell.js`, `marketMaker.js` e `server.js` non avvia nulla: il `main()` parte solo con `node file.js`. `demo.js`, `setup.js`, `doctor.js` e `connect-test.js` invece eseguono il comando appena vengono importati: non importarli da altro codice.
 
 ## Configurazione
 
@@ -91,9 +95,9 @@ Per accorciare la demo ci sono due strade:
 - In `book_offers`, `quality` è *TakerPays/TakerGets* (qui: token per drop), **non** il prezzo in XRP per token.
   Il prezzo si calcola da `TakerGets / 1e6 / TakerPays.value`.
 - Un `OfferCreate` richiede sempre entrambi gli importi: XRP va espresso in drop (stringa).
-- Senza `tfSell`, un'offerta IOC smette di vendere appena riceve `TakerPays`, anche se il prezzo è migliore.
+- Senza `tfSell`, un'offerta IOC si ferma appena ha ricevuto l'importo di `TakerPays`. Test del 20/11/2026: con 0,05 XRP come minimo, senza `tfSell` ha venduto 500 token; con `tfSell` ne ha venduti 1.000, cioè tutto `TakerGets`, per 0,10 XRP.
 - `wallet.sign()` restituisce `{ tx_blob, hash }`, non `tx_json`.
-- L'issuer deve avere `asfDefaultRipple` **prima** che esistano le trust line, altrimenti i token non passano tra i holder.
+- L'issuer imposta `asfDefaultRipple` **prima** di creare le trust line. `setup.js` rispetta questo ordine: conviene non cambiarlo.
 - I codici valuta standard hanno esattamente 3 caratteri (`"TOKEN"` non è valido senza la codifica hex a 40 caratteri).
 - Le offerte non bloccano gli XRP: il saldo del market maker deve coprire l'intero ladder più le riserve.
 
@@ -103,11 +107,12 @@ Per accorciare la demo ci sono due strade:
 
 | Endpoint | Cosa fa |
 |---|---|
-| `GET /health` | Stato: occupato o libero, run corrente, ultimo run concluso |
-| `GET /book` | Bid del token sul testnet e configurazione del ladder |
-| `POST /reset` | Ripristina il ladder del market maker (asincrono) |
-| `POST /execute` | Body `{ "mode": "naive" \| "guarded", "amount", "maxSlippage", "reset" }` |
-| `GET /events` | Stream SSE: `hello`, `run:start`, eventi dell'engine, `run:end` |
+| `GET /health` | Stato: online o offline, occupato o libero, run corrente, ultimo run concluso |
+| `GET /book` | Bid del token sul testnet e configurazione del ladder. Offline: ladder configurato, con `offline: true` |
+| `POST /reset` | Ripristina il ladder del market maker (asincrono, risponde `202`) |
+| `POST /execute` | Body `{ "mode": "naive" \| "guarded", "amount", "maxSlippage", "reset" }`, risponde `202` |
+| `POST /replay` | Riproduce una registrazione curata, senza ledger. Body `{ "name", "speed" }`, risponde `202` |
+| `GET /events` | Stream SSE: `hello`, `run:start`, `seeding`, eventi dell'engine, `run:end` |
 
 Esempio dal browser:
 
@@ -133,7 +138,7 @@ Note per il frontend:
 - Origin consentiti di default: `http://localhost:3000` e `http://127.0.0.1:3000`. Vite usa `http://localhost:5173`: aggiungilo a `ALLOWED_ORIGINS` in `.env`.
 - Una pagina HTML aperta da file invia `Origin: null` e riceve `403`. Servi la pagina con un server locale.
 - Un `403` non espone l'header CORS, quindi il browser nasconde il corpo: il motivo è scritto nel log del server.
-- `/reset` e `POST /execute` richiedono `Content-Type: application/json`, anche con body `{}`.
+- `POST /reset`, `POST /execute` e `POST /replay` richiedono `Content-Type: application/json`, anche con body `{}`.
 - Il campo `reset` vale solo per `mode: "naive"`. La guarded riparte sempre da un ladder nuovo.
 - Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 8-10 s sulla testnet, quindi mostra "preparazione mercato".
 - Ogni evento dell'engine porta `mode` (`naive` o `guarded`): instrada gli eventi per `mode`, non per la pagina che li riceve.
@@ -145,7 +150,7 @@ Note per il frontend:
 ## Controlli
 
 - `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
-- `npm run test:live`: 5 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso, e che la naive emette eventi coerenti con il riepilogo. Invia transazioni reali, richiede `agent/.env` e dura circa 50 secondi. Non è incluso in `npm test`.
+- `npm run test:live`: 5 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso, e che la naive emette eventi coerenti con il riepilogo. Invia transazioni reali, richiede `agent/.env` e dura circa 55 secondi. Non è incluso in `npm test`.
 - `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.
 
 ## Replay (piano B per la demo)
