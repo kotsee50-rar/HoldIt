@@ -17,5 +17,11 @@ export function useBridge() {
     if (!res.ok) dispatch({ type: "local:error", message: res.error });
   }, []);
 
-  return { state, execute };
+  // Replays use the recorded demo runs; they work even when the bridge is offline.
+  const replay = useCallback(async (name, speed = 1) => {
+    const res = await postJson("/replay", { name, speed });
+    if (!res.ok) dispatch({ type: "local:error", message: res.error });
+  }, []);
+
+  return { state, execute, replay };
 }
