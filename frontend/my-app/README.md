@@ -26,6 +26,7 @@ npm run dev             # http://localhost:5173
 | `npm test` | Test della logica di stato e del book (`src/lib/`), senza browser né bridge |
 | `npm run build` | Build di produzione in `dist/` |
 | `npm run lint` | ESLint |
+| `npm run test:e2e` | Test nel browser (Chrome): richiede bridge e dev server accesi. Fa una vendita live di 1.000 TGD sul testnet. Non fa parte di `npm test`. |
 
 ## Configurazione
 

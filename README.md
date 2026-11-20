@@ -59,7 +59,7 @@ Demo Quality: Il confronto side-by-side (Naive vs. Guarded) è visivamente schia
 
 Potential (Scalabilità): È un modello SaaS B2B. Le DAO pagherebbero volentieri una fee in basis point per non perdere il 15% del loro capitale. XRPL è pensata per le istituzioni: questo è il tool che mancava.
 
-🚨 Piano d'Azione per il Team (Cosa fare ORA)
+Piano d'Azione per il Team (Cosa fare ORA)
 Decidete la strada: Avete un mago di Rust? Fate la versione ZK (Pivot B). Non ce l'avete? Fate la versione standard (Execution Engine classico). Entrambe sono forti.
 
 Backend: Scrivete la funzione executeOrder(amount, maxSlippage). Fate in modo che prenda l'order book, calcoli i pezzi e invii le transazioni a raffica controllando che il prezzo medio non sfori il limite.

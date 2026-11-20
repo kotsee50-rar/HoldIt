@@ -13,7 +13,7 @@ const MIN_NODE = { major: 20, minor: 19 };
 const CONNECT_TIMEOUT_MS = 15_000;
 const results = [];
 
-const ICON = { ok: "✅", warn: "⚠️ ", fail: "❌" };
+const ICON = { ok: "[OK]  ", warn: "[WARN]", fail: "[FAIL]" };
 
 function record(level, label, detail = "") {
   results.push({ level, label });
@@ -141,7 +141,7 @@ async function main() {
 
   const failures = results.filter((r) => r.level === "fail").length;
   const warnings = results.filter((r) => r.level === "warn").length;
-  const verdict = failures ? "❌ Not ready" : warnings ? "⚠️  Ready, with warnings" : "✅ Ready for the demo";
+  const verdict = failures ? "[FAIL] Not ready" : warnings ? "[WARN] Ready, with warnings" : "[OK] Ready for the demo";
   console.log(`\n${verdict}: ${failures} failing, ${warnings} warnings`);
   process.exit(failures ? 1 : 0);
 }

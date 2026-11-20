@@ -25,16 +25,16 @@ export function logEvent(event) {
   switch (event.type) {
     case "start":
       if (event.mode === "naive") {
-        console.log(`\n💥 Naive market sell of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, no price floor`);
-        console.log(`📌 Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP`);
+        console.log(`\nNaive market sell of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, no price floor`);
+        console.log(`Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP`);
         break;
       }
-      console.log(`\n🚀 Guarded execution of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, max slippage ${event.maxSlippagePercent}%`);
-      console.log(`📌 Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP | floor: ${event.minPrice.toFixed(8)} XRP`);
+      console.log(`\nGuarded execution of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, max slippage ${event.maxSlippagePercent}%`);
+      console.log(`Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP | floor: ${event.minPrice.toFixed(8)} XRP`);
       break;
     case "chunk":
       console.log(
-        `✅ Chunk ${event.index}: sold ${formatIou(event.sold)} for ${event.receivedXRP.toFixed(6)} XRP` +
+        `[OK] Chunk ${event.index}: sold ${formatIou(event.sold)} for ${event.receivedXRP.toFixed(6)} XRP` +
           ` | avg ${event.avgPrice.toFixed(8)} | slippage ${event.slippagePct.toFixed(3)}% | ${event.progressPct.toFixed(0)}%`,
       );
       break;
@@ -42,10 +42,10 @@ export function logEvent(event) {
       console.log(`⏳ In-band liquidity ${formatIou(event.inBand)} ${TOKEN_CURRENCY}: waiting for the book to refill...`);
       break;
     case "killed":
-      console.log(`🛡️  Chunk ${event.index} killed on-chain (price moved below the floor). Nothing sold, retrying.`);
+      console.log(`Chunk ${event.index} killed on-chain (price moved below the floor). Nothing sold, retrying.`);
       break;
     case "halt":
-      console.log(`🛑 Halted: ${event.reason}`);
+      console.log(`Halted: ${event.reason}`);
       break;
     default:
       break;
@@ -69,6 +69,9 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     pollMs = POLL_MS,
     liquidityTimeoutMs = LIQUIDITY_TIMEOUT_MS,
     onEvent = logEvent,
+    // Optional anchored reference (XRP per token). Without it the reference is the best bid
+    // when the sale starts, so a book moved before the sale moves the floor too.
+    referencePrice: anchoredReference,
   } = options;
   // Every engine event carries mode, so a client can route by it without special cases.
   const emit = (event) => onEvent({ mode: "guarded", ...event });
@@ -82,7 +85,7 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
 
   const initialBids = await getBids(client, issuer);
   if (initialBids.length === 0) throw new Error("Order book is empty: start the market maker first.");
-  const referencePrice = initialBids[0].price;
+  const referencePrice = anchoredReference ?? initialBids[0].price;
   const minPrice = referencePrice * (1 - maxSlippagePercent / 100);
   emit({ type: "start", totalAmount, maxSlippagePercent, referencePrice, minPrice });
 
@@ -215,7 +218,7 @@ async function main() {
 
   const summary = await executeOrder(client, treasury, amount, maxSlippage);
   if (mm) await mm.stop();
-  console.log(`\n🏁 Execution ${summary.status}${summary.reason ? ` (${summary.reason})` : ""}, ${summary.chunks} chunk(s)`);
+  console.log(`\nExecution ${summary.status}${summary.reason ? ` (${summary.reason})` : ""}, ${summary.chunks} chunk(s)`);
   printSummary(summary);
   await client.disconnect();
 }

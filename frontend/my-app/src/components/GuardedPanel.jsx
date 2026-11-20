@@ -17,7 +17,7 @@ export function GuardedPanel({ guarded, onRun, canRun }) {
         disabled={!canRun}
         className="mb-6 w-full rounded-xl bg-frost py-4 font-bold text-shadow shadow-[0_0_15px_rgba(177,229,242,0.6)] transition-all hover:bg-frost/80 disabled:cursor-not-allowed disabled:bg-pale disabled:text-ghost disabled:shadow-none"
       >
-        {running ? "Esecuzione in corso..." : "🛡️ Avvia Esecuzione Protetta"}
+        {running ? "Esecuzione in corso..." : "Avvia Esecuzione Protetta"}
       </button>
 
       <div className="mb-3 flex items-center justify-between font-mono text-xs text-shadow">
