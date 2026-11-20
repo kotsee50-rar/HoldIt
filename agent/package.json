@@ -1,16 +1,25 @@
 {
   "name": "agent",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "TreasuryGuard execution agent (XRPL testnet)",
+  "main": "executeOrder.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "connect-test": "node connect-test.js",
+    "setup": "node setup.js",
+    "mm": "node marketMaker.js",
+    "naive": "node naiveSell.js",
+    "execute": "node executeOrder.js",
+    "demo": "node demo.js"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "dotenv": "^16.4.7",
     "xrpl": "^5.3.0"
   },
-  "type": "module"
+  "type": "module",
+  "engines": {
+    "node": ">=20.19"
+  }
 }
