@@ -1,19 +1,31 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useBridge } from "./hooks/useBridge.js";
+import { useBook } from "./hooks/useBook.js";
 import { StatusBar } from "./components/StatusBar.jsx";
 import { NaivePanel } from "./components/NaivePanel.jsx";
 import { GuardedPanel } from "./components/GuardedPanel.jsx";
+import { OrderBookPanel } from "./components/OrderBookPanel.jsx";
+import { ReplayBar } from "./components/ReplayBar.jsx";
 
 const DEFAULT_AMOUNT = 100000; // a smaller amount shows almost no naive slippage on the demo ladder
 const DEFAULT_SLIPPAGE = 0.5;
 
 export default function App() {
-  const { state, execute } = useBridge();
+  const { state, execute, replay } = useBridge();
+  const book = useBook();
+  const refreshBook = book.refresh;
   const [amount, setAmount] = useState(DEFAULT_AMOUNT);
   const [maxSlippage, setMaxSlippage] = useState(DEFAULT_SLIPPAGE);
 
+  // Refresh the book when a run ends, so the depth shown is the one after the sale.
+  useEffect(() => {
+    if (!state.busy) refreshBook();
+  }, [state.busy, refreshBook]);
+
   // Offline bridge (503 on /execute) or a run already in progress: no new sale.
   const canRun = state.connected && state.online !== false && !state.busy;
+  // Replays never touch the ledger, so they only wait for the bridge to be idle.
+  const canReplay = state.connected && !state.busy;
 
   const runNaive = () => execute({ mode: "naive", amount: Number(amount) });
   const runGuarded = () => execute({ mode: "guarded", amount: Number(amount), maxSlippage: Number(maxSlippage) });
@@ -56,10 +68,14 @@ export default function App() {
         )}
       </section>
 
-      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+      <ReplayBar onReplay={replay} canReplay={canReplay} />
+
+      <div className="mb-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
         <NaivePanel naive={state.naive} onRun={runNaive} canRun={canRun} />
         <GuardedPanel guarded={state.guarded} onRun={runGuarded} canRun={canRun} />
       </div>
+
+      <OrderBookPanel book={book} />
     </div>
   );
 }

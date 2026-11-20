@@ -33,3 +33,14 @@ export function openEventStream({ onOpen, onError, onEvent }) {
   es.onmessage = (message) => onEvent(JSON.parse(message.data));
   return () => es.close();
 }
+
+/** GET JSON. Returns { ok, data } or { ok: false, error }. */
+export async function getJson(path) {
+  try {
+    const res = await fetch(`${BRIDGE_URL}${path}`);
+    if (!res.ok) return { ok: false, error: `Errore HTTP ${res.status}` };
+    return { ok: true, data: await res.json() };
+  } catch {
+    return { ok: false, error: `Bridge non raggiungibile su ${BRIDGE_URL}` };
+  }
+}
