@@ -1,5 +1,6 @@
 // Pure state machine for the bridge's event stream (see agent/README.md, "Bridge").
 // No React here: it is tested with node:test (npm test).
+import { formatTokens } from "./format.js";
 //
 // Routing rules, from the bridge contract:
 // - run:start / run:end carry kind "execute" for every sale (live and replay) and "reset"
@@ -162,7 +163,7 @@ function guardedEvent(state, event) {
           progressPct: event.progressPct,
           log: line(
             g.log,
-            `[CHUNK ${event.index}] Sold ${event.sold} @ avg ${event.avgPrice.toFixed(8)} | Slippage: ${event.slippagePct.toFixed(3)}%`,
+            `[CHUNK ${event.index}] Sold ${formatTokens(event.sold)} @ avg ${event.avgPrice.toFixed(8)} | Slippage: ${event.slippagePct.toFixed(3)}%`,
           ),
         },
       };
