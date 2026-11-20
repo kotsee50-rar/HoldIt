@@ -138,3 +138,8 @@ Note per il frontend:
 - Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 15-20 s, quindi mostra "preparazione mercato".
 - La vendita naive non emette eventi per chunk: per il pannello del book, fai polling di `GET /book`.
 - Il server ricarica la tesoreria automaticamente se il saldo non basta: il run non viene rifiutato.
+
+## Controlli
+
+- `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
+- `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.

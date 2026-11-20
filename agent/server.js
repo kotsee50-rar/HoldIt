@@ -236,7 +236,7 @@ async function route(req, res, url, origin) {
   throw new HttpError(404, `no route for ${method} ${path}`);
 }
 
-const server = http.createServer(async (req, res) => {
+export const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin;
   const url = new URL(req.url, `http://${req.headers.host ?? HOST}`);
   try {
