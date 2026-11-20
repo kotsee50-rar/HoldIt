@@ -1,5 +1,5 @@
 {
-  "runId": "762d672a-9fed-4894-b755-81eecc5da878",
+  "runId": "19793df2-1570-456e-8b17-0f6bd1786a5c",
   "kind": "execute",
   "params": {
     "mode": "guarded",
@@ -7,32 +7,34 @@
     "maxSlippage": 0.5,
     "reset": true
   },
-  "recordedAt": "2026-11-20T15:47:56.702Z",
-  "endT": 47932,
+  "recordedAt": "2026-11-20T16:20:26.261Z",
+  "endT": 51765,
   "result": {
     "mode": "guarded",
     "status": "completed",
     "reason": null,
     "totalAmount": 100000,
     "sold": 100000,
-    "receivedXRP": 9.99,
+    "receivedXRP": 9.988599,
     "referencePrice": 0.0001,
     "minPrice": 0.0000995,
-    "avgPrice": 0.0000999,
-    "slippagePct": 0.10000000000000243,
-    "chunks": 5,
-    "durationMs": 36018
+    "avgPrice": 0.00009988599000000001,
+    "slippagePct": 0.11400999999999317,
+    "chunks": 6,
+    "durationMs": 42049
   },
   "events": [
     {
       "t": 0,
       "event": {
-        "type": "seeding"
+        "type": "seeding",
+        "mode": "guarded"
       }
     },
     {
-      "t": 7400,
+      "t": 6698,
       "event": {
+        "mode": "guarded",
         "type": "start",
         "totalAmount": 100000,
         "maxSlippagePercent": 0.5,
@@ -41,8 +43,9 @@
       }
     },
     {
-      "t": 13672,
+      "t": 13280,
       "event": {
+        "mode": "guarded",
         "type": "chunk",
         "index": 1,
         "requested": 20000,
@@ -53,12 +56,13 @@
         "avgPrice": 0.0000999,
         "slippagePct": 0.10000000000000243,
         "progressPct": 20,
-        "hash": "8FC7172D3C8EC3233A6EE2A03CBDB69BF453EA5D18732033FD29AF4645DFF907"
+        "hash": "EE8C7687F8D3E5EAF7ED147F8B29BA89DB1BAAACC3FE055C70BAE32DDB3FCF51"
       }
     },
     {
-      "t": 21413,
+      "t": 19291,
       "event": {
+        "mode": "guarded",
         "type": "chunk",
         "index": 2,
         "requested": 20000,
@@ -69,12 +73,13 @@
         "avgPrice": 0.0000999,
         "slippagePct": 0.10000000000000243,
         "progressPct": 40,
-        "hash": "6F1E1D41B5015A6AF17FB689C22733876644209F807BF45A3DD1E0E7119333EA"
+        "hash": "52B06E76CB6691A5721D249A57B0701B898C4D52B6907F60BB8BCBE9A8801427"
       }
     },
     {
-      "t": 29009,
+      "t": 25268,
       "event": {
+        "mode": "guarded",
         "type": "chunk",
         "index": 3,
         "requested": 20000,
@@ -85,57 +90,76 @@
         "avgPrice": 0.0000999,
         "slippagePct": 0.10000000000000243,
         "progressPct": 60,
-        "hash": "C9C2ED68C3264F2DF94C67D0172B2ED23605B530DFC0F77817950A18B7AB48CD"
+        "hash": "54D24B2E5A123438AB2203EDED10B9CACD74C9F30A94232CC7510D49F0B1A8C1"
       }
     },
     {
-      "t": 36519,
+      "t": 33435,
       "event": {
+        "mode": "guarded",
         "type": "chunk",
         "index": 4,
-        "requested": 20000,
-        "sold": 20000,
-        "receivedXRP": 1.998,
-        "chunkPrice": 0.0000999,
-        "totalSold": 80000,
-        "avgPrice": 0.0000999,
-        "slippagePct": 0.10000000000000243,
-        "progressPct": 80,
-        "hash": "8E07FC1986DCA8E7F241DD27A7079B4F6A6BCD6149A505D5FCCCBD5CE55B0B6B"
+        "requested": 7000,
+        "sold": 7000,
+        "receivedXRP": 0.697199,
+        "chunkPrice": 0.00009959985714285715,
+        "totalSold": 67000,
+        "avgPrice": 0.00009986864179104477,
+        "slippagePct": 0.13135820895523054,
+        "progressPct": 67,
+        "hash": "153160B93DDD0346658A812DDFD5467AEAA04365A1A41715DF75F6D5D63E184D"
       }
     },
     {
-      "t": 42744,
+      "t": 39977,
       "event": {
+        "mode": "guarded",
         "type": "chunk",
         "index": 5,
         "requested": 20000,
         "sold": 20000,
         "receivedXRP": 1.998,
         "chunkPrice": 0.0000999,
-        "totalSold": 100000,
-        "avgPrice": 0.0000999,
-        "slippagePct": 0.10000000000000243,
-        "progressPct": 100,
-        "hash": "2D3FB5ECD6DFD0BBB9639841EA8291B8EF60F8A795C59BBF91EAF85A60782C05"
+        "totalSold": 87000,
+        "avgPrice": 0.00009987585057471265,
+        "slippagePct": 0.12414942528735703,
+        "progressPct": 87,
+        "hash": "031819753DCF2983AD79269FF6396F70DA645832C0F3F42CCA59941D8B03CD51"
       }
     },
     {
-      "t": 42745,
+      "t": 48009,
       "event": {
-        "type": "done",
         "mode": "guarded",
+        "type": "chunk",
+        "index": 6,
+        "requested": 13000,
+        "sold": 13000,
+        "receivedXRP": 1.2993999999999999,
+        "chunkPrice": 0.00009995384615384615,
+        "totalSold": 100000,
+        "avgPrice": 0.00009988599000000001,
+        "slippagePct": 0.11400999999999317,
+        "progressPct": 100,
+        "hash": "B828E9AA0510132FC38ED11C431F8CD271FE912E87B8D8BC67334EA632ABA228"
+      }
+    },
+    {
+      "t": 48010,
+      "event": {
+        "mode": "guarded",
+        "type": "done",
         "status": "completed",
         "reason": null,
         "totalAmount": 100000,
         "sold": 100000,
-        "receivedXRP": 9.99,
+        "receivedXRP": 9.988599,
         "referencePrice": 0.0001,
         "minPrice": 0.0000995,
-        "avgPrice": 0.0000999,
-        "slippagePct": 0.10000000000000243,
-        "chunks": 5,
-        "durationMs": 36018
+        "avgPrice": 0.00009988599000000001,
+        "slippagePct": 0.11400999999999317,
+        "chunks": 6,
+        "durationMs": 42049
       }
     }
   ]
