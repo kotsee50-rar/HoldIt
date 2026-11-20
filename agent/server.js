@@ -35,7 +35,7 @@ import { executeOrder, logEvent } from "./executeOrder.js";
 
 const HOST = process.env.SERVER_HOST || "127.0.0.1";
 const PORT = Number(process.env.SERVER_PORT || 8787);
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000")
+const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,http://127.0.0.1:3000,http://localhost:5173,http://127.0.0.1:5173")
   .split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
