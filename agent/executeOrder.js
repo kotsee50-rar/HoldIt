@@ -69,6 +69,9 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     pollMs = POLL_MS,
     liquidityTimeoutMs = LIQUIDITY_TIMEOUT_MS,
     onEvent = logEvent,
+    // Optional anchored reference (XRP per token). Without it the reference is the best bid
+    // when the sale starts, so a book moved before the sale moves the floor too.
+    referencePrice: anchoredReference,
   } = options;
   // Every engine event carries mode, so a client can route by it without special cases.
   const emit = (event) => onEvent({ mode: "guarded", ...event });
@@ -82,7 +85,7 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
 
   const initialBids = await getBids(client, issuer);
   if (initialBids.length === 0) throw new Error("Order book is empty: start the market maker first.");
-  const referencePrice = initialBids[0].price;
+  const referencePrice = anchoredReference ?? initialBids[0].price;
   const minPrice = referencePrice * (1 - maxSlippagePercent / 100);
   emit({ type: "start", totalAmount, maxSlippagePercent, referencePrice, minPrice });
 

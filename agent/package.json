@@ -13,7 +13,8 @@
     "server": "node server.js",
     "test": "node --test test/xrplHelpers.test.js test/server.test.js",
     "doctor": "node doctor.js",
-    "test:live": "node --test test/live.test.js"
+    "test:live": "node --test test/live.test.js",
+    "test:adversary": "node --test test/adversary.live.test.js"
   },
   "keywords": [],
   "author": "",

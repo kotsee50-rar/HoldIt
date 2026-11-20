@@ -41,7 +41,7 @@ Demo completa su un clone pulito di `main`, 20/11/2026: 78 s in tutto. Le cifre 
 
 ## Come funziona
 
-1. **Prezzo di riferimento**: il miglior bid all'avvio (`book_offers`).
+1. **Prezzo di riferimento**: il miglior bid all'avvio (`book_offers`), salvo `referencePrice` esplicito nelle opzioni di `executeOrder`. Se qualcuno muove il book prima della vendita, il riferimento di default si sposta con lui: vedere `npm run test:adversary`.
 2. **Prezzo minimo**: `riferimento × (1 − maxSlippage)`.
 3. **Chunk adattivo**: per ogni chunk l'engine misura la liquidità sopra il prezzo minimo
    e ne prende una frazione (`PARTICIPATION`, massimo `CHUNK_MAX`). Se la liquidità non basta, aspetta che il book si ricarichi;
@@ -151,6 +151,7 @@ Note per il frontend:
 
 - `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
 - `npm run test:live`: 5 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso, e che la naive emette eventi coerenti con il riepilogo. Invia transazioni reali, richiede `agent/.env` e dura circa 55 secondi. Non è incluso in `npm test`.
+- `npm run test:adversary`: 3 test sul testnet. Un attaccante svuota i bid prima di una vendita guarded: con il riferimento ancorato al prezzo base la vendita si ferma senza vendere sotto il floor; con il riferimento di default il floor si sposta, e il test lo documenta. Invia transazioni reali, circa 90 secondi. Non è incluso in `npm test`.
 - `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.
 
 ## Replay (piano B per la demo)

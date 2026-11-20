@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test src/lib/runState.test.js src/lib/book.test.js src/lib/format.test.js"
+    "test": "node --test src/lib/runState.test.js src/lib/book.test.js src/lib/format.test.js",
+    "test:e2e": "node --test e2e/ui.e2e.test.mjs"
   },
   "dependencies": {
     "react": "^19.3.1",
@@ -25,6 +26,7 @@
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.7",
     "globals": "^17.13.0",
+    "playwright-core": "^1.65.1",
     "vite": "^8.3.6"
   }
 }
