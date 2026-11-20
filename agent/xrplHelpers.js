@@ -17,8 +17,8 @@ export function isMain(importMetaUrl) {
   }
 }
 
-export async function connect() {
-  const client = new xrpl.Client(NETWORK);
+export async function connect({ timeoutMs } = {}) {
+  const client = new xrpl.Client(NETWORK, timeoutMs ? { connectionTimeout: timeoutMs } : undefined);
   await client.connect();
   return client;
 }
@@ -104,29 +104,38 @@ async function waitForValidation(client, hash, lastLedgerSequence) {
 }
 
 /**
- * Submit several transactions from one account without waiting ~4s for each:
- * sequences are assigned up front, submitted back to back, then awaited together.
- * Batches stay below the per-account queue limit (10).
+ * Submit several transactions from one account in a single ledger round.
+ * Fee, LastLedgerSequence and the first Sequence come from ONE autofill; the rest of the
+ * sequences are derived from it, so no extra network calls per transaction.
+ * Each batch is submitted in parallel and validated together, so a full ladder
+ * (10 levels) costs one ledger close instead of one per transaction.
+ * Batches stay at the per-account queue limit (10).
  */
-export async function submitMany(client, wallet, txs, batchSize = 8) {
+export async function submitMany(client, wallet, txs, batchSize = 10) {
+  if (txs.length === 0) return [];
+  const template = await client.autofill({ ...txs[0] });
   const results = [];
   for (let start = 0; start < txs.length; start += batchSize) {
     const batch = txs.slice(start, start + batchSize);
-    const first = await client.autofill(batch[0]);
-    const prepared = [first];
-    for (let i = 1; i < batch.length; i++) {
-      prepared.push(await client.autofill({ ...batch[i], Sequence: first.Sequence + i }));
-    }
-    const lastLedger = Math.max(...prepared.map((tx) => tx.LastLedgerSequence));
-    const signed = prepared.map((tx) => wallet.sign(tx));
-    for (const { tx_blob } of signed) {
-      const response = await client.submit(tx_blob);
+    const signed = batch.map((tx, i) =>
+      wallet.sign({
+        ...tx,
+        Fee: template.Fee,
+        LastLedgerSequence: template.LastLedgerSequence,
+        Sequence: template.Sequence + start + i,
+      }),
+    );
+    // Sent in parallel: rippled holds out-of-order sequences in the queue until the gap closes.
+    const submitted = await Promise.all(signed.map(({ tx_blob }) => client.submit(tx_blob)));
+    for (const response of submitted) {
       const engine = response.result.engine_result;
       if (/^(tem|tef|tel)/.test(engine)) {
         throw new Error(`Submit rejected: ${engine} - ${response.result.engine_result_message}`);
       }
     }
-    results.push(...(await Promise.all(signed.map(({ hash }) => waitForValidation(client, hash, lastLedger)))));
+    results.push(
+      ...(await Promise.all(signed.map(({ hash }) => waitForValidation(client, hash, template.LastLedgerSequence)))),
+    );
   }
   return results;
 }
