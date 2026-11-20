@@ -1,0 +1,176 @@
+{
+  "account": "rL8vLbbpBcZExzTAtZC6RXDgbnsqgQCU1X",
+  "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+  "currency": "TGD",
+  "bestBidBefore": 0.0000996,
+  "result": {
+    "close_time_iso": "2026-11-20T15:26:10Z",
+    "ctid": "C156F48B00210001",
+    "hash": "58DD523AAD0F6CB31E1AB5E795908D891C0B1547BE55CBEAF8D86924363F1C75",
+    "ledger_hash": "96556F78D7E850A09AD7D923E7C8346FE3CA34198F3C2327F86879DF105803C4",
+    "ledger_index": 22475915,
+    "meta": {
+      "AffectedNodes": [
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rPSEFBbNrAK5iePC8NR4aGKfzGfch6hdPc",
+              "Balance": "117499720",
+              "Flags": 0,
+              "OwnerCount": 9,
+              "Sequence": 22474859
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "0BA8ED7A7C8BB67E6881AE42F4AD4233BF6D29B7A9841D14ED95AFEAA5A36F02",
+            "PreviousFields": {
+              "Balance": "117599319"
+            },
+            "PreviousTxnID": "865018B199E51DFA20FA7E4B8F4AAB8AF9B3569F7DBD8600CE2E7F77BAB34C89",
+            "PreviousTxnLgrSeq": 22475405
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rPSEFBbNrAK5iePC8NR4aGKfzGfch6hdPc",
+              "BookDirectory": "6E947A0CF3DF5EF5D38E70D969D1999FB52D0CA2F387210653039125B4DBDC05",
+              "BookNode": "0",
+              "Flags": 0,
+              "OwnerNode": "0",
+              "Sequence": 22474843,
+              "TakerGets": "896401",
+              "TakerPays": {
+                "currency": "TGD",
+                "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+                "value": "9000"
+              }
+            },
+            "LedgerEntryType": "Offer",
+            "LedgerIndex": "158253DE4CC67F35FACEDC07710C8292A793BFC916836F6DD1C4571603C97566",
+            "PreviousFields": {
+              "TakerGets": "996000",
+              "TakerPays": {
+                "currency": "TGD",
+                "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+                "value": "10000"
+              }
+            },
+            "PreviousTxnID": "BF289482424F820FDFCE723B109264B517AB36DF1FC6DD4AC076A3FF2428B93D",
+            "PreviousTxnLgrSeq": 22475393
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Account": "rL8vLbbpBcZExzTAtZC6RXDgbnsqgQCU1X",
+              "Balance": "182498120",
+              "Flags": 0,
+              "OwnerCount": 1,
+              "Sequence": 22474751
+            },
+            "LedgerEntryType": "AccountRoot",
+            "LedgerIndex": "40C532E741F9174F195FB856C716F7461E4F5ED1A967A680F1127DD5EF6CCCEB",
+            "PreviousFields": {
+              "Balance": "182398533",
+              "Sequence": 22474750
+            },
+            "PreviousTxnID": "865018B199E51DFA20FA7E4B8F4AAB8AF9B3569F7DBD8600CE2E7F77BAB34C89",
+            "PreviousTxnLgrSeq": 22475405
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Balance": {
+                "currency": "TGD",
+                "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                "value": "-880919"
+              },
+              "Flags": 131072,
+              "HighLimit": {
+                "currency": "TGD",
+                "issuer": "rPSEFBbNrAK5iePC8NR4aGKfzGfch6hdPc",
+                "value": "1000000000000000e-3"
+              },
+              "HighNode": "0",
+              "LowLimit": {
+                "currency": "TGD",
+                "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+                "value": "0"
+              },
+              "LowNode": "0"
+            },
+            "LedgerEntryType": "RippleState",
+            "LedgerIndex": "9BD797312B8FA5C7936865DEF4F787F9D2F0D065C747651D8D2F4C99F283D463",
+            "PreviousFields": {
+              "Balance": {
+                "currency": "TGD",
+                "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                "value": "-879919"
+              }
+            },
+            "PreviousTxnID": "865018B199E51DFA20FA7E4B8F4AAB8AF9B3569F7DBD8600CE2E7F77BAB34C89",
+            "PreviousTxnLgrSeq": 22475405
+          }
+        },
+        {
+          "ModifiedNode": {
+            "FinalFields": {
+              "Balance": {
+                "currency": "TGD",
+                "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                "value": "-1119081"
+              },
+              "Flags": 131072,
+              "HighLimit": {
+                "currency": "TGD",
+                "issuer": "rL8vLbbpBcZExzTAtZC6RXDgbnsqgQCU1X",
+                "value": "1000000000000000e-3"
+              },
+              "HighNode": "0",
+              "LowLimit": {
+                "currency": "TGD",
+                "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+                "value": "0"
+              },
+              "LowNode": "0"
+            },
+            "LedgerEntryType": "RippleState",
+            "LedgerIndex": "CE9D6922D2BB03B755DBAD313D90BDA7E6A28BFFEBAA431BDCC6EDB9E31006B9",
+            "PreviousFields": {
+              "Balance": {
+                "currency": "TGD",
+                "issuer": "rrrrrrrrrrrrrrrrrrrrBZbvji",
+                "value": "-1120081"
+              }
+            },
+            "PreviousTxnID": "865018B199E51DFA20FA7E4B8F4AAB8AF9B3569F7DBD8600CE2E7F77BAB34C89",
+            "PreviousTxnLgrSeq": 22475405
+          }
+        }
+      ],
+      "TransactionIndex": 33,
+      "TransactionResult": "tesSUCCESS"
+    },
+    "tx_json": {
+      "Account": "rL8vLbbpBcZExzTAtZC6RXDgbnsqgQCU1X",
+      "Fee": "12",
+      "Flags": 655360,
+      "LastLedgerSequence": 22475933,
+      "Sequence": 22474750,
+      "SigningPubKey": "EDFBB069E43CD9B0C5B6AAA1C6B1B872B6907A59E8391156A8701CF5E8EB3E319E",
+      "TakerGets": {
+        "currency": "TGD",
+        "issuer": "rhRLzedAK4MU7bqvZGmf3Eowrf1EWbkVdL",
+        "value": "1000"
+      },
+      "TakerPays": "1",
+      "TransactionType": "OfferCreate",
+      "TxnSignature": "CD915A528D699718E24F172065AA999E751DE64E998DED4C297D321BE2627DC800B079B5BDD8FD125701F86A50EA48D2BF2E0D5EDA4F0361571C2621BA705D05",
+      "ctid": "C156F48B00210001",
+      "date": 848503570,
+      "ledger_index": 22475915
+    },
+    "validated": true
+  }
+}
