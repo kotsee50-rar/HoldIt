@@ -1,5 +1,5 @@
 <div align=center>
-  ![Project Logo](https://github.com/kotsee50-rar/HoldIt/blob/main/HoldIt!.png?raw=true)
+  <img src="images/HoldIt!.png" width="128" align="center">
   <h1>HoldIt!</h1>
   (Qui manca la descrizione breve)
 </div>
