@@ -52,7 +52,7 @@ pnpm-debug.log*
 # Runtime data
 pids
 *.pid
-*.seed          <-- NOTE: This ignores Node.js process files, NOT XRPL seeds
+*.seed
 *.pid.lock
 
 # ============================================
