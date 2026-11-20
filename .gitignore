@@ -1,0 +1,86 @@
+# ============================================
+# 1. DEPENDENCIES
+# ============================================
+/node_modules
+/.pnp
+.pnp.*
+.yarn/*
+!.yarn/patches
+!.yarn/plugins
+!.yarn/releases
+!.yarn/versions
+
+# ============================================
+# 2. SECRETS & ENVIRONMENT VARIABLES
+#    (CRITICAL for XRPL wallet seeds)
+# ============================================
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.*.local
+*.pem
+*.key
+
+# ============================================
+# 3. BUILD OUTPUTS
+# ============================================
+# Next.js
+/.next/
+/out/
+/build
+/dist
+*.tsbuildinfo
+
+# Production
+/build
+/dist
+
+# ============================================
+# 4. LOGS & RUNTIME DATA
+# ============================================
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed          <-- NOTE: This ignores Node.js process files, NOT XRPL seeds
+*.pid.lock
+
+# ============================================
+# 5. TESTING & COVERAGE
+# ============================================
+/coverage
+.nyc_output
+*.lcov
+
+# ============================================
+# 6. OS & EDITOR FILES
+# ============================================
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# ============================================
+# 7. MISC
+# ============================================
+.turbo
+.eslintcache
+.node_repl_history
+*.tgz
