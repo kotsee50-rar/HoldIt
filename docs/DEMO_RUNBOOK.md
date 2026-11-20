@@ -24,7 +24,7 @@ Eseguire nell'ordine indicato, dalla cartella `agent/`.
 |---|---|---|
 | Aggiornare il repo | `git switch main && git pull && npm ci` | Nessun errore |
 | Test offline | `npm test` | 23 test passati |
-| Test sul testnet | `npm run test:live` | 4 test passati, circa 50 secondi |
+| Test sul testnet | `npm run test:live` | 5 test passati, circa 55 secondi |
 | Controllo pre-demo | `npm run doctor` | "Ready" o solo warning; nessun ❌ |
 | Prova della demo | Eseguire il flusso completo dal frontend | Naive e guarded completate |
 | Registrare il video di backup | Screen recording della prova completa | File salvato in un posto sicuro |
@@ -88,7 +88,7 @@ Il run completo dura circa 65–90 secondi. Il frontend deve aspettare `run:end`
    ```bash
    curl -s -XPOST http://127.0.0.1:8787/replay -H 'Content-Type: application/json' -d '{"name":"demo-guarded","speed":1}'
    ```
-   Durata approssimativa: naive circa 2,5 s, guarded circa 17,5 s. Il replay accorcia le attese, quindi dirlo sul palco.
+   Durata approssimativa: naive circa 5 s, guarded circa 20 s. Il replay accorcia le attese, quindi dirlo sul palco.
 4. Il pannello pubblico usa il ladder statico (`offline: true`). Va detto che è una ricostruzione, non il book in tempo reale.
 
 **Piano C: tutto cade, incluso il computer.** Mostrare il video di backup e spiegare il meccanismo con il diagramma di `PROJECT_GUIDE.md`.

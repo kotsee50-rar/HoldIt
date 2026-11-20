@@ -8,11 +8,17 @@ import { connect, formatIou, getBids, isMain, loadWallets, parseFill, tokenAmoun
 
 const { tfImmediateOrCancel, tfSell } = xrpl.OfferCreateFlags;
 
-export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_ISSUER } = {}) {
+/**
+ * One market sell of the whole amount, no price floor.
+ * Emits the same event types as executeOrder (start, chunk, done), so a client can
+ * render both strategies with the same code: the naive sale is one chunk at 100%.
+ */
+export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_ISSUER, onEvent = () => {} } = {}) {
   const startedAt = Date.now();
   const bids = await getBids(client, issuer);
   if (bids.length === 0) throw new Error("Order book is empty: start the market maker first.");
   const referencePrice = bids[0].price;
+  onEvent({ type: "start", mode: "naive", totalAmount, maxSlippagePercent: null, referencePrice, minPrice: 0 });
 
   const result = await client.submitAndWait(
     {
@@ -25,19 +31,44 @@ export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_IS
     { wallet, autofill: true },
   );
   const fill = parseFill(result, wallet.address);
-  const avgPrice = fill.deliveredTokens > 0 ? fill.deliveredXRP / fill.deliveredTokens : 0;
-  return {
+  const sold = fill.deliveredTokens;
+  const avgPrice = sold > 0 ? fill.deliveredXRP / sold : 0;
+  const slippagePct = avgPrice ? ((referencePrice - avgPrice) / referencePrice) * 100 : 0;
+  const hasFill = sold > 0;
+  const summary = {
     mode: "naive",
+    status: hasFill ? "completed" : "halted",
+    reason: hasFill ? null : `nothing filled (${fill.code})`,
     code: fill.code,
     totalAmount,
-    sold: fill.deliveredTokens,
+    sold,
     receivedXRP: fill.deliveredXRP,
     referencePrice,
+    minPrice: 0,
     avgPrice,
-    slippagePct: avgPrice ? ((referencePrice - avgPrice) / referencePrice) * 100 : 0,
+    slippagePct,
+    chunks: hasFill ? 1 : 0,
     durationMs: Date.now() - startedAt,
     hash: result.result.hash,
   };
+  if (hasFill) {
+    onEvent({
+      type: "chunk",
+      index: 1,
+      mode: "naive",
+      requested: totalAmount,
+      sold,
+      receivedXRP: fill.deliveredXRP,
+      chunkPrice: fill.deliveredXRP / sold,
+      totalSold: sold,
+      avgPrice,
+      slippagePct,
+      progressPct: (sold / totalAmount) * 100,
+      hash: summary.hash,
+    });
+  }
+  onEvent({ type: "done", ...summary });
+  return summary;
 }
 
 export function printSummary(summary) {
