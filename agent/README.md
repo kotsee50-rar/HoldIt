@@ -136,13 +136,16 @@ Note per il frontend:
 - `/reset` e `POST /execute` richiedono `Content-Type: application/json`, anche con body `{}`.
 - Il campo `reset` vale solo per `mode: "naive"`. La guarded riparte sempre da un ladder nuovo.
 - Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 8-10 s sulla testnet, quindi mostra "preparazione mercato".
-- La vendita naive non emette eventi per chunk: per il pannello del book, fai polling di `GET /book`.
+- Ogni evento dell'engine porta `mode` (`naive` o `guarded`): instrada gli eventi per `mode`, non per la pagina che li riceve.
+- La vendita naive emette `start`, `chunk` (un solo chunk al 100%) e `done`, con la stessa forma della guarded.
+- Nel `start` della naive, `maxSlippagePercent` è `null`: non c'è floor. Non usarlo con `.toFixed()` senza controllo.
+- Per il pannello del book, fai polling di `GET /book`.
 - Il server ricarica la tesoreria automaticamente se il saldo non basta: il run non viene rifiutato.
 
 ## Controlli
 
 - `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
-- `npm run test:live`: 4 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, e direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso. Invia transazioni reali, richiede `agent/.env` e dura circa 50 secondi. Non è incluso in `npm test`.
+- `npm run test:live`: 5 test sul testnet. Verificano il ladder, una vendita guarded da 1.000 token con prezzo minimo rispettato su ogni chunk, direttamente sul ledger (senza engine) che un ordine con floor si ferma a L1 con fill parziale e che un ordine con floor sopra il miglior bid viene ucciso, e che la naive emette eventi coerenti con il riepilogo. Invia transazioni reali, richiede `agent/.env` e dura circa 50 secondi. Non è incluso in `npm test`.
 - `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.
 
 ## Replay (piano B per la demo)

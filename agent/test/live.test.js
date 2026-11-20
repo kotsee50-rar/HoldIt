@@ -13,6 +13,7 @@ import {
 } from "../xrplHelpers.js";
 import { seedLadder, startMarketMaker } from "../marketMaker.js";
 import { executeOrder } from "../executeOrder.js";
+import { naiveSell } from "../naiveSell.js";
 
 const AMOUNT = 1000;
 const MAX_SLIPPAGE_PCT = 0.5;
@@ -80,6 +81,7 @@ test("a guarded sale completes within the mandate and never fills below the floo
     );
   }
   assert.ok(events.some((event) => event.type === "done"), "no done event");
+  assert.ok(events.every((event) => event.mode === "guarded"), "an engine event has no guarded mode");
 });
 
 // Calls the ledger directly, without the engine: an IOC sell with a minimum XRP amount.
@@ -116,5 +118,18 @@ test("an order whose floor is above the best bid is killed and sells nothing", {
   const fill = await sellWithFloor(1_000, LADDER[0].price * 1.01);
   assert.equal(fill.code, "tecKILLED");
   assert.equal(fill.deliveredTokens, 0);
+});
+
+test("the naive sale emits start, chunk and done events that match its summary", { timeout: 120_000 }, async () => {
+  const naiveEvents = [];
+  const naive = await naiveSell(client, wallets.treasury, 1000, { onEvent: (event) => naiveEvents.push(event) });
+  assert.equal(naive.status, "completed", naive.reason ?? "naive sale did not fill");
+  assert.deepEqual(naiveEvents.map((event) => event.type), ["start", "chunk", "done"]);
+  assert.ok(naiveEvents.every((event) => event.mode === "naive"), "a naive event has no naive mode");
+
+  const [, chunk, done] = naiveEvents;
+  assert.ok(Math.abs(chunk.sold - naive.sold) < TOLERANCE, "chunk and summary disagree on tokens sold");
+  assert.ok(Math.abs(chunk.progressPct - (naive.sold / 1000) * 100) < TOLERANCE);
+  assert.equal(done.status, "completed");
 });
 

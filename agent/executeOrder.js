@@ -24,6 +24,11 @@ const { tfImmediateOrCancel, tfSell } = xrpl.OfferCreateFlags;
 export function logEvent(event) {
   switch (event.type) {
     case "start":
+      if (event.mode === "naive") {
+        console.log(`\n💥 Naive market sell of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, no price floor`);
+        console.log(`📌 Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP`);
+        break;
+      }
       console.log(`\n🚀 Guarded execution of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, max slippage ${event.maxSlippagePercent}%`);
       console.log(`📌 Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP | floor: ${event.minPrice.toFixed(8)} XRP`);
       break;
@@ -65,6 +70,8 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     liquidityTimeoutMs = LIQUIDITY_TIMEOUT_MS,
     onEvent = logEvent,
   } = options;
+  // Every engine event carries mode, so a client can route by it without special cases.
+  const emit = (event) => onEvent({ mode: "guarded", ...event });
   const startedAt = Date.now();
   const dust = Math.max(1e-6, totalAmount * 1e-9);
 
@@ -77,7 +84,7 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
   if (initialBids.length === 0) throw new Error("Order book is empty: start the market maker first.");
   const referencePrice = initialBids[0].price;
   const minPrice = referencePrice * (1 - maxSlippagePercent / 100);
-  onEvent({ type: "start", totalAmount, maxSlippagePercent, referencePrice, minPrice });
+  emit({ type: "start", totalAmount, maxSlippagePercent, referencePrice, minPrice });
 
   let sold = 0;
   let receivedXRP = 0;
@@ -116,11 +123,11 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     if (inBand < Math.min(minChunk, remaining)) {
       if (waitingSince === null) {
         waitingSince = Date.now();
-        onEvent({ type: "waiting", inBand, remaining });
+        emit({ type: "waiting", inBand, remaining });
       } else if (Date.now() - waitingSince > liquidityTimeoutMs) {
         status = "halted";
         reason = `no liquidity above the price floor for ${liquidityTimeoutMs / 1000}s`;
-        onEvent({ type: "halt", reason, ...summary() });
+        emit({ type: "halt", reason, ...summary() });
         break;
       }
       await sleep(pollMs);
@@ -147,12 +154,12 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     // 5. Measure what actually happened from validated metadata.
     const fill = parseFill(result, wallet.address);
     if (fill.deliveredTokens <= 0) {
-      onEvent({ type: "killed", index, code: fill.code });
+      emit({ type: "killed", index, code: fill.code });
       consecutiveKills += 1;
       if (consecutiveKills >= 5) {
         status = "halted";
         reason = `${consecutiveKills} chunks in a row killed by the price floor (${fill.code})`;
-        onEvent({ type: "halt", reason, ...summary() });
+        emit({ type: "halt", reason, ...summary() });
         break;
       }
       await sleep(pollMs);
@@ -162,7 +169,7 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     sold += fill.deliveredTokens;
     receivedXRP += fill.deliveredXRP;
     const current = summary();
-    onEvent({
+    emit({
       type: "chunk",
       index,
       requested: chunk,
@@ -180,13 +187,13 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     if (current.slippagePct > maxSlippagePercent) {
       status = "halted";
       reason = `slippage ${current.slippagePct.toFixed(3)}% above mandate`;
-      onEvent({ type: "halt", reason, ...current });
+      emit({ type: "halt", reason, ...current });
       break;
     }
   }
 
   const final = summary();
-  onEvent({ type: "done", ...final });
+  emit({ type: "done", ...final });
   return final;
 }
 
