@@ -1,4 +1,5 @@
 import { toBookRows, totalDepth } from "../lib/book.js";
+import { formatTokens } from "../lib/format.js";
 
 export function OrderBookPanel({ book }) {
   const data = book.data;
@@ -11,7 +12,7 @@ export function OrderBookPanel({ book }) {
         <h2 className="text-xl font-bold text-shadow">Order book (bid TGD)</h2>
         <span className="font-mono text-xs text-shadow/70">
           {data?.offline ? "Ladder configurato (bridge offline)" : "Bid correnti sul testnet"}
-          {data && ` · profondità ${depth.toLocaleString("it-IT")} TGD`}
+          {data && ` · profondità ${formatTokens(depth)} TGD`}
         </span>
       </div>
 
@@ -37,7 +38,7 @@ export function OrderBookPanel({ book }) {
                 <tr key={row.level} className="border-b border-silver">
                   <td className="py-2 pr-3">L{row.level}</td>
                   <td className="py-2 pr-3">{row.price.toFixed(8)}</td>
-                  <td className="py-2 pr-3">{row.tokens.toLocaleString("it-IT")}</td>
+                  <td className="py-2 pr-3">{formatTokens(row.tokens)}</td>
                   <td className="py-2 pr-3">{row.xrp.toFixed(4)}</td>
                   <td className="py-2">
                     <div className="h-2 overflow-hidden rounded-full bg-silver">
