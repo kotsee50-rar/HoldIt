@@ -1,6 +1,6 @@
-# TreasuryGuard Agent
+# HoldIt! Agent
 
-Execution engine di TreasuryGuard su XRPL testnet: vende grandi quantità di token
+Execution engine di HoldIt! su XRPL testnet: vende grandi quantità di token
 in chunk calibrati sulla profondità dell'order book, con un prezzo minimo garantito on-chain.
 
 ## Avvio rapido
@@ -35,7 +35,7 @@ npm run demo        # confronto completo: vendita naive vs TreasuryGuard
 | | Venduti | XRP ricevuti | Slippage | Tempo |
 |---|---|---|---|---|
 | Naive market sell | 100.000 TGD | 8,644 | 13,56% | 7 s |
-| TreasuryGuard (max 0,5%) | 100.000 TGD | 9,989 | 0,11% | 47 s |
+| HoldIt! (max 0,5%) | 100.000 TGD | 9,989 | 0,11% | 47 s |
 
 Demo completa su un clone pulito di `main`, 20/11/2026: 78 s in tutto. Le cifre cambiano a ogni run, perché il book e la rete cambiano.
 
