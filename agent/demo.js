@@ -3,32 +3,11 @@
 //
 //   npm run demo                    (uses DEMO_AMOUNT and MAX_SLIPPAGE_PCT from .env)
 //   npm run demo -- 50000 0.5
-import {
-  DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, TOKEN_CURRENCY, TOKEN_ISSUER, TREASURY_MINT,
-} from "./config.js";
-import { connect, formatIou, getTokenBalance, loadWallets, tokenAmount } from "./xrplHelpers.js";
+import { DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, TOKEN_ISSUER } from "./config.js";
+import { connect, formatIou, loadWallets, topUpTreasury } from "./xrplHelpers.js";
 import { describeLadder, seedLadder, startMarketMaker } from "./marketMaker.js";
 import { naiveSell, printSummary } from "./naiveSell.js";
 import { executeOrder } from "./executeOrder.js";
-
-async function ensureTreasuryTokens(client, issuer, treasury, needed) {
-  const balance = await getTokenBalance(client, treasury.address, issuer.address);
-  if (balance >= needed) return balance;
-  console.log(`🪙 Treasury has ${formatIou(balance)} ${TOKEN_CURRENCY}, minting ${formatIou(TREASURY_MINT)} more...`);
-  const result = await client.submitAndWait(
-    {
-      TransactionType: "Payment",
-      Account: issuer.address,
-      Destination: treasury.address,
-      Amount: tokenAmount(issuer.address, Math.max(TREASURY_MINT, needed - balance)),
-    },
-    { wallet: issuer, autofill: true },
-  );
-  if (result.result.meta.TransactionResult !== "tesSUCCESS") {
-    throw new Error(`Mint failed: ${result.result.meta.TransactionResult}`);
-  }
-  return getTokenBalance(client, treasury.address, issuer.address);
-}
 
 async function main() {
   const args = process.argv.slice(2);
@@ -42,7 +21,7 @@ async function main() {
   if (amount > depth) {
     console.warn(`⚠️  ${formatIou(amount)} is deeper than the ladder (${formatIou(depth)}): the naive sell will only fill partially.`);
   }
-  await ensureTreasuryTokens(client, issuer, treasury, amount * 2);
+  await topUpTreasury(client, issuer, treasury.address, amount * 2);
 
   console.log("\n=== Market ===");
   describeLadder();
