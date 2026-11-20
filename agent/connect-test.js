@@ -1,4 +1,4 @@
-const xrpl = require("xrpl");
+import xrpl from "xrpl";
 
 async function main() {
   // Connect to the XRPL Testnet
