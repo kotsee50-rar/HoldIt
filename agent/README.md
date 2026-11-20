@@ -135,7 +135,7 @@ Il server accetta richieste solo senza `Origin` (curl, script) o da `ALLOWED_ORI
 Con `SERVER_HOST` lasciato al default il server non è raggiungibile dalla rete.
 
 Note per il frontend:
-- Origin consentiti di default: `http://localhost:3000` e `http://127.0.0.1:3000`. Vite usa `http://localhost:5173`: aggiungilo a `ALLOWED_ORIGINS` in `.env`.
+- Origin consentiti di default: `localhost` e `127.0.0.1` sulle porte 3000 e 5173 (default di Vite). Per un'altra porta, aggiungerla a `ALLOWED_ORIGINS` in `.env`.
 - Una pagina HTML aperta da file invia `Origin: null` e riceve `403`. Servi la pagina con un server locale.
 - Un `403` non espone l'header CORS, quindi il browser nasconde il corpo: il motivo è scritto nel log del server.
 - `POST /reset`, `POST /execute` e `POST /replay` richiedono `Content-Type: application/json`, anche con body `{}`.
