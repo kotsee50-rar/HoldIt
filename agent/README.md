@@ -11,7 +11,7 @@ Requisiti: Node.js 20.19 o superiore (richiesto da xrpl 5.x).
 cd agent
 npm ci              # installa le dipendenze dal lockfile
 npm run setup       # crea issuer, tesoreria e market maker su testnet, salva i seed in agent/.env
-npm run demo        # confronto completo: vendita naive vs TreasuryGuard
+npm run demo        # confronto completo: vendita naive vs HoldIt!
 ```
 
 `npm run setup` va eseguito una volta sola: i wallet vengono riutilizzati.

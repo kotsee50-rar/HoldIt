@@ -1,5 +1,5 @@
 // agent/demo.js
-// End-to-end demo on testnet: Naive market sell vs TreasuryGuard, same amount, same book.
+// End-to-end demo on testnet: Naive market sell vs HoldIt!, same amount, same book.
 //
 //   npm run demo                    (uses DEMO_AMOUNT and MAX_SLIPPAGE_PCT from .env)
 //   npm run demo -- 50000 0.5
@@ -32,7 +32,7 @@ async function main() {
   printSummary(naive);
   console.log(`   Slippage ${naive.slippagePct.toFixed(2)}% - Value destroyed`);
 
-  console.log("\n=== 2. The solution: TreasuryGuard ===");
+  console.log("\n=== 2. The solution: HoldIt! ===");
   console.log("Resetting the book to the same starting state...");
   const seqs = await seedLadder(client, marketMaker);
   const mm = startMarketMaker(client, marketMaker, seqs);
@@ -50,7 +50,7 @@ async function main() {
       "slippage %": naive.slippagePct.toFixed(2),
       "time s": (naive.durationMs / 1000).toFixed(1),
     },
-    TreasuryGuard: {
+    HoldIt!: {
       sold: formatIou(guarded.sold),
       "XRP received": guarded.receivedXRP.toFixed(6),
       "slippage %": guarded.slippagePct.toFixed(2),
@@ -58,7 +58,7 @@ async function main() {
     },
   });
   const saved = guarded.receivedXRP - naive.receivedXRP;
-  console.log(`TreasuryGuard received ${saved.toFixed(6)} XRP more (${((saved / naive.receivedXRP) * 100).toFixed(2)}%).`);
+  console.log(`HoldIt! received ${saved.toFixed(6)} XRP more (${((saved / naive.receivedXRP) * 100).toFixed(2)}%).`);
   console.log(`Total demo time: ${((Date.now() - demoStart) / 1000).toFixed(1)} s`);
 
   await client.disconnect();

@@ -2,7 +2,7 @@
 import { test } from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { bidFromOffer, formatIou, parseFill, toDrops, tokenAmount } from "../xrplHelpers.js";
+import { bidFromOffer, ensureConnected, formatIou, parseFill, toDrops, tokenAmount } from "../xrplHelpers.js";
 import { TOKEN_CURRENCY } from "../config.js";
 
 test("formatIou never uses exponent notation", () => {
@@ -65,4 +65,15 @@ test("parseFill reads a real fill from validated metadata", () => {
     (Number(account.FinalFields.Balance) - Number(account.PreviousFields.Balance) + Number(fixture.result.tx_json.Fee)) / 1e6;
   assert.ok(Math.abs(fill.deliveredXRP - expectedXRP) < 1e-9);
   assert.ok(fill.deliveredXRP > 0);
+});
+
+test("ensureConnected reconnects a dropped client and leaves a live one alone", async () => {
+  const calls = { connect: 0 };
+  const dropped = { isConnected: () => false, connect: async () => { calls.connect += 1; } };
+  await ensureConnected(dropped);
+  assert.equal(calls.connect, 1, "a dropped client must reconnect");
+
+  const live = { isConnected: () => true, connect: async () => { calls.connect += 1; } };
+  await ensureConnected(live);
+  assert.equal(calls.connect, 1, "a live client must not reconnect");
 });

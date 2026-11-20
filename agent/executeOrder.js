@@ -1,5 +1,5 @@
 // agent/executeOrder.js
-// TreasuryGuard execution engine: sells a large amount in depth-aware chunks.
+// HoldIt! execution engine: sells a large amount in depth-aware chunks.
 //
 // Protection is enforced ON-CHAIN: every chunk is an OfferCreate with
 // tfImmediateOrCancel | tfSell and a minimum price (TakerPays). The ledger

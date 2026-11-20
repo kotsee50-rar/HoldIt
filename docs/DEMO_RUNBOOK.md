@@ -1,4 +1,4 @@
-# Runbook della demo TreasuryGuard
+# Runbook della demo HoldIt!
 
 Checklist operativa per il giorno della demo. Per capire il progetto leggere prima [`PROJECT_GUIDE.md`](PROJECT_GUIDE.md); per i dettagli dei comandi, [`agent/README.md`](../agent/README.md).
 

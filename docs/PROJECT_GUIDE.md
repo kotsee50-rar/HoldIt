@@ -1,10 +1,10 @@
-# TreasuryGuard — guida al progetto
+# HoldIt! — guida al progetto
 
 > Documento di orientamento e apprendimento per la repository **IXH26-project**. Descrive ciò che è presente nel codice, spiega i concetti XRPL necessari per leggerlo e separa l’implementazione attuale dalle idee di prodotto ancora da realizzare. Aggiornare questa guida quando cambiano architettura, flussi o comportamento.
 
 ## 1. In breve
 
-TreasuryGuard è una prova di concetto di un execution engine per vendere un token IOU sul DEX nativo di XRP Ledger (XRPL). Il problema modellato è quello di una tesoreria che vende una quantità elevata: un ordine grande può consumare i bid migliori e ottenere prezzi progressivamente peggiori, cioè subire slippage.
+HoldIt! è una prova di concetto di un execution engine per vendere un token IOU sul DEX nativo di XRP Ledger (XRPL). Il problema modellato è quello di una tesoreria che vende una quantità elevata: un ordine grande può consumare i bid migliori e ottenere prezzi progressivamente peggiori, cioè subire slippage.
 
 Il progetto rende confrontabili due strategie:
 

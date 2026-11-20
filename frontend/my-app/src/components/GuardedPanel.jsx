@@ -6,7 +6,7 @@ export function GuardedPanel({ guarded, onRun, canRun }) {
 
   return (
     <div className="rounded-2xl border-2 border-frost bg-silver/30 p-6">
-      <h2 className="mb-4 text-2xl font-bold text-shadow">TreasuryGuard Engine</h2>
+      <h2 className="mb-4 text-2xl font-bold text-shadow">HoldIt! Engine</h2>
       <p className="mb-6 text-sm text-shadow/70">
         L'Agente spezza l'ordine in chunk sicuri, protetti da un floor di prezzo on-chain.
       </p>

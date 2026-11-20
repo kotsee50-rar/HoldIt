@@ -34,7 +34,7 @@ export default function App() {
     <div className="min-h-screen bg-ghost p-6 font-sans text-shadow md:p-8">
       <header className="mb-6 border-b border-silver pb-4">
         <h1 className="bg-gradient-to-r from-shadow to-frost bg-clip-text text-4xl font-black text-transparent">
-          TreasuryGuard
+          HoldIt!
         </h1>
         <p className="mt-2 text-shadow/70">Execution Engine for DAOs on XRPL</p>
       </header>

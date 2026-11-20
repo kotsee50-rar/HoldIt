@@ -1,4 +1,4 @@
-# TreasuryGuard: frontend
+# HoldIt!: frontend
 
 Interfaccia della demo: confronto tra una vendita naive e una vendita protetta (guarded) sul testnet XRPL. Parla solo con il bridge locale (`agent/server.js`), che detiene i seed e il collegamento al ledger.
 
