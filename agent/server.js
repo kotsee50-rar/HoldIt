@@ -188,12 +188,12 @@ function launch(work) {
 async function runExecute({ mode, amount, maxSlippage, reset }) {
   if (mode === "naive") {
     if (reset) {
-      broadcast({ type: "seeding" });
+      broadcast({ type: "seeding", mode: "naive" });
       await seedLadder(client, wallets.marketMaker);
     }
-    return naiveSell(client, wallets.treasury, amount);
+    return naiveSell(client, wallets.treasury, amount, { onEvent: broadcast });
   }
-  broadcast({ type: "seeding" });
+  broadcast({ type: "seeding", mode: "guarded" });
   const seqs = await seedLadder(client, wallets.marketMaker);
   const marketMaker = startMarketMaker(client, wallets.marketMaker, seqs);
   try {
