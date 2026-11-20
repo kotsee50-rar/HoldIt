@@ -123,7 +123,7 @@ async function checkBridge() {
 }
 
 async function main() {
-  console.log("TreasuryGuard doctor\n");
+  console.log("HoldIt! doctor\n");
   checkNode();
   const canUseNetwork = checkLocalFiles();
 

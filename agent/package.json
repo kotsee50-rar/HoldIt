@@ -1,7 +1,7 @@
 {
   "name": "agent",
   "version": "1.0.0",
-  "description": "TreasuryGuard execution agent (XRPL testnet)",
+  "description": "HoldIt! execution agent (XRPL testnet)",
   "main": "executeOrder.js",
   "scripts": {
     "connect-test": "node connect-test.js",

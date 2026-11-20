@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* TreasuryGuard palette. Use these tokens only; no other colours in the UI. */
+/* HoldIt! palette. Use these tokens only; no other colours in the UI. */
 @theme {
   --color-ghost: #E8E9F3;   /* Ghost White: page background */
   --color-silver: #CECECE;  /* Silver: borders, dividers, input outlines */

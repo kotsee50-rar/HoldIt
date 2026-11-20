@@ -17,6 +17,12 @@ export function isMain(importMetaUrl) {
   }
 }
 
+/** Reconnects a client whose WebSocket dropped. Long-running processes need this: the testnet closes idle or failed sessions. */
+export async function ensureConnected(client) {
+  if (!client.isConnected()) await client.connect();
+  return client;
+}
+
 export async function connect({ timeoutMs } = {}) {
   const client = new xrpl.Client(NETWORK, timeoutMs ? { connectionTimeout: timeoutMs } : undefined);
   await client.connect();

@@ -28,7 +28,7 @@ import path from "node:path";
 import {
   AGENT_DIR, DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, NETWORK, TOKEN_CURRENCY, TOKEN_ISSUER,
 } from "./config.js";
-import { connect, getBids, isMain, loadWallets, sleep, topUpTreasury } from "./xrplHelpers.js";
+import { connect, ensureConnected, getBids, isMain, loadWallets, sleep, topUpTreasury } from "./xrplHelpers.js";
 import { seedLadder, startMarketMaker } from "./marketMaker.js";
 import { naiveSell } from "./naiveSell.js";
 import { executeOrder, logEvent } from "./executeOrder.js";
@@ -186,6 +186,7 @@ function launch(work) {
 }
 
 async function runExecute({ mode, amount, maxSlippage, reset }) {
+  await ensureConnected(client);
   if (mode === "naive") {
     if (reset) {
       broadcast({ type: "seeding", mode: "naive" });
@@ -288,6 +289,11 @@ async function route(req, res, url, origin) {
   }
 
   if (method === "GET" && path === "/book") {
+    try {
+      await ensureConnected(client);
+    } catch {
+      return sendJson(res, 503, { ok: false, error: "testnet not reachable, retry in a moment" }, origin);
+    }
     const bids = await getBids(client, TOKEN_ISSUER, 20);
     return sendJson(res, 200, {
       currency: TOKEN_CURRENCY,
@@ -314,6 +320,7 @@ async function route(req, res, url, origin) {
     requireOnline();
     lock("execute", params);
     try {
+      await ensureConnected(client);
       await topUpTreasury(client, wallets.issuer, wallets.treasury.address, params.amount);
     } catch (error) {
       release();
@@ -379,7 +386,7 @@ async function main() {
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
   server.listen(PORT, HOST, () => {
-    console.log(`TreasuryGuard bridge on http://${HOST}:${PORT}`);
+    console.log(`HoldIt! bridge on http://${HOST}:${PORT}`);
     console.log(`Allowed browser origins: ${ALLOWED_ORIGINS.join(", ")}`);
   });
   if (process.argv.includes("--offline")) {
