@@ -2,6 +2,7 @@
 // nothing here touches the ledger, so it runs offline. `npm test`.
 import { test, before, after } from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 
 const ALLOWED = "http://localhost:3000";
 // Set before importing server.js so the test does not depend on the local agent/.env.
@@ -86,4 +87,51 @@ test("maxSlippage out of range is rejected", async () => {
 test("rejected requests never take the run lock", async () => {
   const body = await (await fetch(`${base}/health`)).json();
   assert.equal(body.busy, false);
+});
+
+test("replay of an unknown recording is 404 and takes no lock", async () => {
+  const res = await post("/replay", { name: "does-not-exist" });
+  assert.equal(res.status, 404);
+  assert.equal((await (await fetch(`${base}/health`)).json()).busy, false);
+});
+
+test("replay rejects path-like names and bad speeds", async () => {
+  assert.equal((await post("/replay", { name: "../server" })).status, 400);
+  assert.equal((await post("/replay", { name: "demo-guarded", speed: 0 })).status, 400);
+});
+
+test("replay re-emits the recorded run and finishes with its result", async () => {
+  const recording = JSON.parse(readFileSync(new URL("../recordings/demo-guarded.json", import.meta.url), "utf8"));
+  const res = await post("/replay", { name: "demo-guarded", speed: 100 });
+  assert.equal(res.status, 202);
+
+  let health;
+  for (let i = 0; i < 100; i++) {
+    health = await (await fetch(`${base}/health`)).json();
+    if (!health.busy) break;
+    await new Promise((resolve) => setTimeout(resolve, 100));
+  }
+  assert.equal(health.busy, false);
+  assert.equal(health.lastRun.kind, "execute");
+  assert.equal(health.lastRun.params.replay, "demo-guarded");
+  assert.equal(health.lastRun.ok, true);
+  assert.equal(health.lastRun.result.sold, recording.result.sold);
+  assert.equal(health.lastRun.result.slippagePct, recording.result.slippagePct);
+});
+
+test("without the testnet, /book serves the configured ladder as offline bids", async () => {
+  const res = await fetch(`${base}/book`);
+  assert.equal(res.status, 200);
+  const body = await res.json();
+  assert.equal(body.offline, true);
+  assert.equal(body.bids.length, 10);
+  assert.equal(body.bids[0].price, body.ladder[0].price);
+});
+
+test("without the testnet, live runs are refused with 503 and point to replay", async () => {
+  const execute = await post("/execute", { mode: "naive", amount: 1000 });
+  assert.equal(execute.status, 503);
+  assert.match((await execute.json()).error, /POST \/replay/);
+  assert.equal((await post("/reset", {})).status, 503);
+  assert.equal((await (await fetch(`${base}/health`)).json()).online, false);
 });

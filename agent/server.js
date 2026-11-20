@@ -3,6 +3,7 @@
 // HTTP for commands, Server-Sent Events (SSE) for live progress. No extra dependencies.
 //
 //   npm run server        listens on http://127.0.0.1:8787
+//   npm run server -- --offline   no testnet at all: /health, /events, /replay, static /book
 //
 // Endpoints
 //   GET  /health   liveness, current run and last finished run
@@ -12,6 +13,8 @@
 //                  naive:   one market sell. reset (default true) re-seeds the ladder first.
 //                  guarded: always starts from a fresh ladder and runs the market maker
 //                           in the background for the duration of the sale.
+//   POST /replay   body: { name, speed? } replays a curated recording from recordings/
+//                  with its original timing (speed divides it, default 1). No ledger access.
 //   GET  /events   SSE stream: hello, run:start, engine events (start, chunk, waiting,
 //                  killed, halt, done), run:end
 //
@@ -20,8 +23,12 @@
 import "./config.js"; // loads agent/.env before anything else reads process.env
 import http from "node:http";
 import crypto from "node:crypto";
-import { DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, TOKEN_CURRENCY, TOKEN_ISSUER } from "./config.js";
-import { connect, getBids, isMain, loadWallets, topUpTreasury } from "./xrplHelpers.js";
+import fs from "node:fs";
+import path from "node:path";
+import {
+  AGENT_DIR, DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, NETWORK, TOKEN_CURRENCY, TOKEN_ISSUER,
+} from "./config.js";
+import { connect, getBids, isMain, loadWallets, sleep, topUpTreasury } from "./xrplHelpers.js";
 import { seedLadder, startMarketMaker } from "./marketMaker.js";
 import { naiveSell } from "./naiveSell.js";
 import { executeOrder, logEvent } from "./executeOrder.js";
@@ -35,11 +42,20 @@ const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "http://localhost:3000,h
 const MAX_AMOUNT = 10_000_000;
 const MAX_BODY_BYTES = 16 * 1024;
 const HEARTBEAT_MS = 15_000;
+// Recordings: finished live sales are saved to recordings/live/ (gitignored).
+// Curated runs for the demo live directly in recordings/ and are replayed with POST /replay.
+const RECORDINGS_DIR = path.join(AGENT_DIR, "recordings");
+const LIVE_DIR = path.join(RECORDINGS_DIR, "live");
+const RECORDING_NAME = /^[a-z0-9][a-z0-9-]{0,63}$/i;
+const REPLAY_MAX_GAP_MS = 2500; // long pauses (e.g. ladder seeding) are shortened on replay
+const CONNECT_TIMEOUT_MS = 10_000;
 
 const state = { busy: false, run: null, lastRun: null };
 const subscribers = new Set();
 let client;
 let wallets;
+let recording = null; // engine events of the live run in progress
+let online = false; // true once connected to the testnet
 
 class HttpError extends Error {
   constructor(status, message) {
@@ -66,6 +82,9 @@ function sendJson(res, status, body, origin) {
 function broadcast(event) {
   const line = `data: ${JSON.stringify({ ...event, at: Date.now() })}\n\n`;
   for (const res of subscribers) res.write(line);
+  if (recording && !event.type.startsWith("run:")) {
+    recording.events.push({ t: Date.now() - recording.startedAt, event });
+  }
   logEvent(event);
 }
 
@@ -105,6 +124,10 @@ function parseExecute(body) {
 }
 
 // Takes the run lock synchronously, so two concurrent POSTs cannot both start.
+function requireOnline() {
+  if (!online) throw new HttpError(503, "testnet not connected, use POST /replay");
+}
+
 function lock(kind, params = {}) {
   if (state.busy) throw new HttpError(409, `busy: ${state.run.kind} run in progress`);
   state.busy = true;
@@ -118,22 +141,47 @@ function release() {
 }
 
 // Runs `work` in the background with the lock already held. Returns the run id at once.
+function saveLiveRecording(id, params, result) {
+  try {
+    fs.mkdirSync(LIVE_DIR, { recursive: true });
+    const file = path.join(LIVE_DIR, `${id}.json`);
+    const data = {
+      runId: id,
+      kind: "execute",
+      params,
+      recordedAt: new Date(recording.startedAt).toISOString(),
+      endT: Date.now() - recording.startedAt,
+      result,
+      events: recording.events,
+    };
+    fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
+    console.log(`💾 recording saved: ${file}`);
+  } catch (error) {
+    console.error(`recording not saved: ${error.message}`);
+  }
+}
+
 function launch(work) {
   const { id, kind, params } = state.run;
   console.log(`▶ ${kind} ${id}`);
+  if (kind === "execute" && !params.replay) recording = { startedAt: Date.now(), events: [] };
   broadcast({ type: "run:start", runId: id, kind, params });
   work()
     .then((result) => {
-      state.lastRun = { id, kind, ok: true, result, finishedAt: Date.now() };
+      state.lastRun = { id, kind, params, ok: true, result, finishedAt: Date.now() };
       console.log(`■ ${kind} ${id} finished`);
+      if (recording) saveLiveRecording(id, params, result);
       broadcast({ type: "run:end", runId: id, kind, ok: true, result });
     })
     .catch((error) => {
-      state.lastRun = { id, kind, ok: false, error: error.message, finishedAt: Date.now() };
+      state.lastRun = { id, kind, params, ok: false, error: error.message, finishedAt: Date.now() };
       console.error(`■ ${kind} ${id} failed: ${error.message}`);
       broadcast({ type: "run:end", runId: id, kind, ok: false, error: error.message });
     })
-    .finally(release);
+    .finally(() => {
+      recording = null;
+      release();
+    });
   return id;
 }
 
@@ -155,6 +203,33 @@ async function runExecute({ mode, amount, maxSlippage, reset }) {
   }
 }
 
+async function loadRecording(name) {
+  if (typeof name !== "string" || !RECORDING_NAME.test(name)) {
+    throw new HttpError(400, "recording name must be letters, digits and dashes");
+  }
+  try {
+    return JSON.parse(await fs.promises.readFile(path.join(RECORDINGS_DIR, `${name}.json`), "utf8"));
+  } catch (error) {
+    if (error.code === "ENOENT") throw new HttpError(404, `no recording named ${name}`);
+    throw error;
+  }
+}
+
+// Re-emits the recorded engine events with their original timing (divided by speed).
+// Touches no ledger: it works offline, which is the point.
+async function runReplay(data, speed) {
+  let previous = 0;
+  for (const { t, event } of data.events) {
+    const gap = Math.min(t - previous, REPLAY_MAX_GAP_MS);
+    previous = t;
+    if (gap > 0) await sleep(gap / speed);
+    broadcast(event);
+  }
+  const tail = Math.min((data.endT ?? previous) - previous, REPLAY_MAX_GAP_MS);
+  if (tail > 0) await sleep(tail / speed);
+  return data.result;
+}
+
 function openEvents(req, res, origin) {
   res.writeHead(200, {
     "Content-Type": "text/event-stream",
@@ -163,7 +238,7 @@ function openEvents(req, res, origin) {
     "X-Accel-Buffering": "no",
     ...corsHeaders(origin),
   });
-  const hello = { type: "hello", busy: state.busy, run: state.run, lastRun: state.lastRun, at: Date.now() };
+  const hello = { type: "hello", online, busy: state.busy, run: state.run, lastRun: state.lastRun, at: Date.now() };
   res.write(`data: ${JSON.stringify(hello)}\n\n`);
   subscribers.add(res);
   const heartbeat = setInterval(() => res.write(": ping\n\n"), HEARTBEAT_MS);
@@ -192,10 +267,23 @@ async function route(req, res, url, origin) {
   if (method === "GET" && path === "/health") {
     return sendJson(res, 200, {
       ok: true,
+      online,
       busy: state.busy,
       run: state.run,
       lastRun: state.lastRun,
       subscribers: subscribers.size,
+    }, origin);
+  }
+
+  if (method === "GET" && path === "/book" && !online) {
+    const bids = LADDER.map((level) => ({ tokens: level.size, xrp: level.size * level.price, price: level.price }));
+    return sendJson(res, 200, {
+      currency: TOKEN_CURRENCY,
+      issuer: TOKEN_ISSUER,
+      offline: true,
+      busy: state.busy,
+      bids,
+      ladder: LADDER,
     }, origin);
   }
 
@@ -212,6 +300,7 @@ async function route(req, res, url, origin) {
 
   if (method === "POST" && path === "/reset") {
     await readJson(req);
+    requireOnline();
     lock("reset");
     const id = launch(async () => {
       await seedLadder(client, wallets.marketMaker);
@@ -222,6 +311,7 @@ async function route(req, res, url, origin) {
 
   if (method === "POST" && path === "/execute") {
     const params = parseExecute(await readJson(req));
+    requireOnline();
     lock("execute", params);
     try {
       await topUpTreasury(client, wallets.issuer, wallets.treasury.address, params.amount);
@@ -231,6 +321,20 @@ async function route(req, res, url, origin) {
     }
     const id = launch(() => runExecute(params));
     return sendJson(res, 202, { runId: id, params }, origin);
+  }
+
+  if (method === "POST" && path === "/replay") {
+    const body = await readJson(req);
+    const speed = body.speed === undefined ? 1 : Number(body.speed);
+    if (!Number.isFinite(speed) || speed <= 0 || speed > 100) {
+      throw new HttpError(400, "speed must be a number in (0, 100]");
+    }
+    const data = await loadRecording(body.name);
+    if (!Array.isArray(data.events)) throw new HttpError(500, "recording has no events");
+    // Same kind and params shape as a live run, so the frontend needs no special case.
+    lock("execute", { ...(data.params ?? {}), replay: body.name, speed });
+    const id = launch(() => runReplay(data, speed));
+    return sendJson(res, 202, { runId: id, name: body.name, speed }, origin);
   }
 
   throw new HttpError(404, `no route for ${method} ${path}`);
@@ -259,15 +363,30 @@ async function shutdown() {
   process.exit(0);
 }
 
+async function connectTestnet() {
+  try {
+    wallets = loadWallets();
+    client = await connect({ timeoutMs: CONNECT_TIMEOUT_MS });
+    online = true;
+    console.log(`Connected to ${NETWORK}`);
+  } catch (error) {
+    console.warn(`⚠️  Testnet unavailable (${error.message}).`);
+    console.warn("   Starting OFFLINE: /health, /events, /replay and a static /book only.");
+  }
+}
+
 async function main() {
-  wallets = loadWallets();
-  client = await connect();
   process.on("SIGINT", shutdown);
   process.on("SIGTERM", shutdown);
   server.listen(PORT, HOST, () => {
     console.log(`TreasuryGuard bridge on http://${HOST}:${PORT}`);
     console.log(`Allowed browser origins: ${ALLOWED_ORIGINS.join(", ")}`);
   });
+  if (process.argv.includes("--offline")) {
+    console.log("--offline: testnet not contacted.");
+  } else {
+    await connectTestnet();
+  }
 }
 
 if (isMain(import.meta.url)) {

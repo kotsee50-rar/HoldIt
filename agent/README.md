@@ -135,7 +135,7 @@ Note per il frontend:
 - Un `403` non espone l'header CORS, quindi il browser nasconde il corpo: il motivo è scritto nel log del server.
 - `/reset` e `POST /execute` richiedono `Content-Type: application/json`, anche con body `{}`.
 - Il campo `reset` vale solo per `mode: "naive"`. La guarded riparte sempre da un ladder nuovo.
-- Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 15-20 s, quindi mostra "preparazione mercato".
+- Prima di ogni run arriva un evento `seeding`: il ripristino del ladder dura circa 8-10 s sulla testnet, quindi mostra "preparazione mercato".
 - La vendita naive non emette eventi per chunk: per il pannello del book, fai polling di `GET /book`.
 - Il server ricarica la tesoreria automaticamente se il saldo non basta: il run non viene rifiutato.
 
@@ -143,3 +143,27 @@ Note per il frontend:
 
 - `npm test`: test automatici offline (funzioni di conversione, validazione e controllo accessi del bridge). Non toccano il ledger.
 - `npm run doctor`: controllo prima della demo. Verifica Node, dipendenze, `.env`, connessione al testnet, saldi, order book e stato del bridge. Esce con codice 1 se c'è un blocco; i warning sono informativi.
+
+## Replay (piano B per la demo)
+
+`POST /replay` riproduce un run registrato, con gli stessi eventi e la stessa temporizzazione del run originale. Non tocca il ledger: funziona anche se la testnet non risponde. Il replay ha la stessa forma di un run dal vivo: `kind: "execute"` e `params` con `mode`, `amount`, `maxSlippage` più `replay` (il nome della registrazione) e `speed`. Il frontend non ha bisogno di un caso speciale.
+
+```bash
+curl -s -XPOST http://127.0.0.1:8787/replay -H 'Content-Type: application/json' \
+  -d '{"name":"demo-guarded","speed":1}'
+```
+
+- `name` è il nome del file in `agent/recordings/` senza `.json`. Sono ammessi solo lettere, cifre e trattini.
+- `speed` (da 0 a 100, default 1) divide la durata. Le pause lunghe, come il ripristino del ladder, vengono accorciate a 2,5 s.
+- Demo incluse: `demo-naive` e `demo-guarded`.
+- Ogni run dal vivo viene salvato in `agent/recordings/live/` (gitignored). Per aggiornare una demo, copiare un file da `live/` in `recordings/`.
+
+### Modalità offline
+
+`npm run server -- --offline` avvia il bridge senza contattare la testnet. Senza il flag, il server prova a connettersi per 10 s e, se fallisce, parte comunque in modalità offline.
+
+In modalità offline:
+- `/health`, `/events` e `/replay` funzionano.
+- `GET /book` restituisce il ladder configurato, con `offline: true`, così il pannello pubblico resta popolato.
+- `POST /execute` e `POST /reset` rispondono `503`: il messaggio indica di usare `/replay`.
+- Il server resta offline finché non viene riavviato. Riavviarlo con la rete disponibile lo riporta online.
