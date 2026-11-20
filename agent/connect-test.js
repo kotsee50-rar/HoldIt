@@ -7,7 +7,7 @@ async function main() {
   await client.connect();
   console.log("✅ Connected!");
 
-  // Create and fund a test wallet (the faucet gives you 1000 test XRP)
+  // Create and fund a test wallet (the testnet faucet gives you 100 test XRP)
   console.log("Funding a test wallet via faucet...");
   const { wallet, balance } = await client.fundWallet();
   console.log("✅ Wallet created:", wallet.address);
