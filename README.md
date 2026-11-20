@@ -1,7 +1,7 @@
 <div align=center>
   <img src="images/HoldIt!.png" width="128" align="center">
   <h1>HoldIt!</h1>
-  (Qui manca la descrizione breve)
+  <p>Stop burning treasury capital. HoldIt! is XRPL's confidential execution engine. It liquidates massive DAO positions with strict slippage control and zero market signaling via automated order slicing.</p>
 </div>
 
 ## Index
