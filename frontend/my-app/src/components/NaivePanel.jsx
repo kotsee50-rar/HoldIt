@@ -17,7 +17,7 @@ export function NaivePanel({ naive, onRun, canRun }) {
         disabled={!canRun}
         className="mb-6 w-full rounded-xl bg-shadow py-4 font-bold text-ghost transition-all hover:bg-shadow/85 disabled:cursor-not-allowed disabled:bg-pale"
       >
-        {running ? "Esecuzione in corso..." : "🔴 Esegui Market Sell (Naive)"}
+        {running ? "Esecuzione in corso..." : "Esegui Market Sell (Naive)"}
       </button>
 
       <div className="rounded-lg border border-shadow/30 bg-ghost p-4">

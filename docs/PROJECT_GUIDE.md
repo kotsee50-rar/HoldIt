@@ -11,7 +11,7 @@ Il progetto rende confrontabili due strategie:
 - **Naive**: un unico ordine di vendita per l’intera quantità, senza soglia di prezzo.
 - **Guarded**: misura il book, calcola un prezzo minimo in base alla tolleranza scelta e vende in chunk con un limite verificato dal ledger.
 
-La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto per creare e ricostituire la liquidità. Di conseguenza, il risultato dimostra il funzionamento del meccanismo in un mercato simulato: non è una misura di performance su liquidità reale.
+La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto per creare e ricostituire la liquidità. Di conseguenza, il risultato dimostra il funzionamento del meccanismo in un mercato simulato: non è una misura di performance su liquidità reale. I termini tecnici sono spiegati nel glossario (sezione 13), che parte dalle basi della blockchain.
 
 ## 2. Stato del progetto: implementato e previsto
 
@@ -132,7 +132,7 @@ Le transazioni vengono inviate al ledger e poi misurate dai metadati validati. `
 
 ## 6. I tre wallet e il ciclo della demo
 
-1. `npm run setup` crea **issuer**, **treasury** e **market maker** tramite faucet Testnet. Finanzia anche il market maker per sostenere gli XRP del ladder e le riserve di account.
+1. `npm run setup` crea **issuer**, **treasury** e **market maker** tramite faucet Testnet. Finanzia anche il market maker per sostenere gli XRP del ladder e le riserve di account (1 XRP di base più 0,2 XRP per ogni oggetto posseduto, come offerte e trust line: vedere il glossario, sezione 13).
 2. Tesoreria e market maker creano le trust line verso l’issuer; l’issuer invia TGD alla tesoreria.
 3. `seedLadder()` pubblica un livello di bid per ogni configurazione in `LADDER`. Il market maker usa `OfferSequence` per sostituire atomicamente gli ordini esistenti dove possibile e cancella eventuali offerte in eccesso.
 4. La vendita naive consuma il book con un unico IOC. Poiché il ladder ha livelli più bassi, un ordine grande può ricevere un prezzo medio inferiore al miglior bid iniziale.
@@ -286,3 +286,85 @@ Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:
 ## 12. Come mantenere questa guida
 
 Quando il progetto evolve, aggiornare in questo file almeno: mappa dei moduli, flusso end-to-end, parametri dell’engine, API bridge, stato delle funzionalità e limiti della demo. Se una parte futura diventa implementata, spostarla da “Non presente ancora” alla sezione pertinente e indicare dove si trova nel codice. Tenere `agent/README.md` focalizzato sull’avvio e sui dettagli operativi, e questa guida focalizzata sull’apprendimento e sul quadro complessivo.
+
+## 13. Glossario e basi
+
+Questa sezione spiega i termini usati nel progetto, a partire dalle basi della blockchain. Non serve conoscere XRPL per leggerla. I valori numerici sono quelli letti dal testnet il 20/11/2026 e possono cambiare.
+
+### Basi della blockchain
+
+- **Blockchain / ledger distribuito**: un registro condiviso, copiato su molti computer (nodi), che accetta solo transazioni firmate e ne mantiene un ordine unico. Nessuna parte controlla da sola il registro.
+- **Ledger (XRPL)**: il registro di XRP Ledger. Ogni versione del registro chiusa e validata ha un indice numerico (`ledger_index`, o `seq`). Nel progetto il testnet produce un nuovo ledger circa ogni 4 secondi (misurato 3,8 secondi).
+- **Nodo e validatore**: un nodo tiene una copia del registro. Un validatore è un nodo che partecipa al voto sulla versione successiva.
+- **Consenso**: il meccanismo con cui i validatori concordano quale transazione entra nel ledger successivo. XRPL usa un proprio algoritmo di consenso.
+- **Transazione**: un'istruzione firmata che modifica il registro, come un pagamento o la creazione di un'offerta.
+- **Validata (finalità)**: una transazione è definitiva quando compare in un ledger validato. Il codice aspetta questo stato prima di leggere il risultato.
+- **Account e indirizzo**: un account è una voce del registro. L'indirizzo è la sua parte pubblica, di solito inizia con `r`.
+- **Seed**: il segreto da cui si derivano le chiavi di un account. Chi ha il seed controlla i fondi. Non va mai condiviso, né committato su git.
+- **Wallet**: la coppia di chiavi derivata da un seed, che serve a firmare le transazioni.
+- **Sequence (numero di sequenza)**: ogni account ha un contatore che cresce con le proprie transazioni. Una transazione va inviata con il numero successivo, quindi le transazioni di uno stesso account vanno in ordine.
+- **LastLedgerSequence**: l'ultimo ledger in cui una transazione può essere inclusa. Dopo, la transazione scade.
+- **Fee**: il costo di una transazione, pagato in XRP e distrutto dal protocollo, non versato a nessuno. Sul testnet la fee di base è 0,00001 XRP, cioè 10 drop.
+- **Drop**: l'unità minima di XRP. 1 XRP = 1.000.000 drop. Gli importi XRP nelle transazioni sono in drop, come stringhe.
+- **Riserva**: una quantità di XRP che l'account non può spendere, per ogni oggetto che possiede. Sul testnet: 1 XRP di base più 0,2 XRP per oggetto (offerte e trust line contano come oggetti). Un'offerta non blocca gli XRP che offrirebbe: la riserva riguarda solo l'oggetto.
+- **Testnet e Mainnet**: il testnet è una rete di prova con XRP gratuiti, senza valore. La Mainnet ha valore reale. Il progetto funziona solo sul testnet.
+- **Faucet**: il distributore gratuito di XRP di prova sul testnet. Ha limiti di richiesta: per questo il codice gestisce i top-up con un messaggio di errore leggibile.
+
+### Token su XRPL
+
+- **XRP**: il token nativo del ledger.
+- **IOU**: un token emesso da un account chiamato **issuer**. Si identifica con la coppia `currency` + `issuer`. Il TGD del progetto è un IOU.
+- **Codice valuta**: il nome del token. Un codice standard ha 3 caratteri.
+- **Trust line**: l'autorizzazione con cui un account accetta di detenere un IOU di un certo issuer, fino a un limite. Senza trust line, l'account non può ricevere il token.
+- **DefaultRipple**: impostazione dell'issuer che regola il modo in cui i token passano tra detentori. `setup.js` la imposta prima di creare le trust line.
+
+### Mercato e liquidità
+
+- **DEX (exchange decentralizzato)**: un mercato di scambio gestito dal protocollo, senza intermediari. Su XRPL è integrato nel ledger.
+- **Order book**: l'elenco delle offerte aperte, con prezzo e quantità.
+- **Bid**: un'offerta di acquisto. Il miglior bid è quella con il prezzo più alto.
+- **Ask**: un'offerta di vendita. Il miglior ask è quella con il prezzo più basso.
+- **Spread**: la differenza tra miglior ask e miglior bid.
+- **Liquidità**: la quantità di offerte disponibili vicino al prezzo corrente. Più liquidità significa meno impatto su un ordine.
+- **Market maker**: un operatore che mantiene offerte di acquisto e vendita per fornire liquidità. Nel progetto è simulato e ricarica i livelli consumati a prezzi fissi.
+- **Ladder**: la serie di livelli di bid del market maker, con prezzi decrescenti e quantità definite in configurazione.
+- **Price impact**: l'effetto di un ordine grande sul prezzo, perché consuma i livelli migliori.
+- **Slippage**: la differenza tra il prezzo di riferimento e il prezzo medio ottenuto. Nel progetto: `(riferimento − prezzo medio) / riferimento × 100`.
+- **AMM (automated market maker)**: un pool di liquidità con prezzo calcolato da una formula, invece che da un book di offerte. Il progetto non lo usa.
+
+### Ordini e transazioni su XRPL
+
+- **OfferCreate**: la transazione con cui si crea un'offerta nel book. Specifica cosa si cede (`TakerGets`) e cosa si vuole ricevere (`TakerPays`).
+- **IOC (ImmediateOrCancel)**: l'offerta esegue subito la parte abbinabile e annulla il resto. Non resta nel book.
+- **tfSell**: flag che vende l'intero importo `TakerGets`, anche se si ottiene più di `TakerPays`. Senza di esso, l'ordine si ferma appena riceve l'importo `TakerPays`: nel test del 20/11/2026, con 0,05 XRP come minimo, ha venduto 500 token invece di 1.000.
+- **Limit price**: il prezzo minimo accettato da un'offerta, cioè il rapporto tra `TakerPays` e `TakerGets`. Nel progetto è il floor.
+- **OfferSequence**: la transazione sostituisce un'offerta esistente con una nuova, in un'unica operazione.
+- **Funded / unfunded**: un'offerta è finanziata nella misura in cui il proprietario ha il saldo per eseguirla. Il book mostra i campi `*_funded` per la quantità realmente eseguibile.
+- **quality**: il rapporto tra gli importi nella direzione del book. Nella direzione usata dal progetto è token per drop, non il prezzo in XRP per token.
+- **Metadata**: il dettaglio di una transazione validata, con i saldi prima e dopo. Il progetto legge da lì i fill reali (`getBalanceChanges`), invece di stimarli.
+- **Codici di risultato**: `tesSUCCESS` è eseguita. `tecKILLED` è un IOC senza fill, cancellato. I codici `tec` sono transazioni incluse senza effetto utile, con fee pagata. `ter` significa in attesa di riprovare. `tem`, `tef` e `tel` indicano transazioni malformate, non incluse o errori locali: il codice le rifiuta.
+
+### Sicurezza del prezzo e MEV
+
+- **Front-running**: qualcuno anticipa una transazione altrui per trarne profitto.
+- **Sandwich**: due transazioni attorno a quella di una vittima: una prima, che sposta il prezzo, e una dopo, che ne approfitta.
+- **MEV (Maximal Extractable Value)**: il valore che un operatore può estrarre riordinando o includendo transazioni. Il termine nasce su Ethereum.
+- **Mempool**: la lista di transazioni in attesa di inclusione, usata come concetto su Ethereum. Su XRPL il termine non è usato allo stesso modo: vedere `docs/PITCH_MEV_NOTE.md`.
+
+Il rischio di front-running su XRPL è oggetto di dibattito pubblico (giugno 2026). Il progetto non lo elimina: il floor limita il prezzo di ogni fill, ma un attacco può ridurre la quantità eseguita. Il test `test:adversary` lo mostra.
+
+### Termini del progetto
+
+- **Chunk**: una porzione di una vendita grande, eseguita con un ordine separato.
+- **Floor (prezzo minimo)**: `riferimento × (1 − mandato / 100)`. Nessun chunk viene eseguito sotto questo prezzo.
+- **Riferimento**: il prezzo da cui si misurano floor e slippage. Di default è il miglior bid all'avvio della vendita. Con l'opzione `referencePrice` può essere ancorato a un prezzo scelto prima.
+- **Fill**: la quantità effettivamente eseguita da un ordine.
+- **Kill**: un chunk che non esegue nulla. Dopo cinque kill consecutivi la vendita si ferma.
+- **Halted**: la vendita si è fermata senza completare la quantità richiesta. `reason` spiega il motivo.
+- **Mandato**: la tolleranza di slippage che la tesoreria accetta, espressa in percentuale.
+- **Replay**: la riproduzione di una vendita già registrata. Non tocca il ledger.
+
+### Termini delle tecnologie future (non implementate)
+
+- **Smart Escrow (XLS-0100)**: una proposta per escrow programmabili su XRPL. Nel progetto è solo un'idea di evoluzione.
+- **Prova a conoscenza zero (ZK, zero-knowledge)**: una prova crittografica che un'affermazione è vera senza rivelare i dati che la rendono vera. Nel progetto è solo un'idea di evoluzione, con RISC Zero come possibile strumento.
