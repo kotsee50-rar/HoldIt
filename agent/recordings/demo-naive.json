@@ -1,0 +1,32 @@
+{
+  "runId": "3a019563-476c-47bf-909f-27be3fcc9530",
+  "kind": "execute",
+  "params": {
+    "mode": "naive",
+    "amount": 100000,
+    "maxSlippage": 0.5,
+    "reset": true
+  },
+  "recordedAt": "2026-11-20T15:47:41.267Z",
+  "endT": 14545,
+  "result": {
+    "mode": "naive",
+    "code": "tesSUCCESS",
+    "totalAmount": 100000,
+    "sold": 100000,
+    "receivedXRP": 8.644,
+    "referencePrice": 0.0001,
+    "avgPrice": 0.00008644,
+    "slippagePct": 13.559999999999997,
+    "durationMs": 6706,
+    "hash": "75D7295E6552794182578FAEC152BE25AC237492136D5F5D5A3DA62B0C1FB6A6"
+  },
+  "events": [
+    {
+      "t": 0,
+      "event": {
+        "type": "seeding"
+      }
+    }
+  ]
+}
