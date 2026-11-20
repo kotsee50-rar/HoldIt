@@ -1,3 +1,5 @@
+import { formatTokens } from "../lib/format.js";
+
 export function NaivePanel({ naive, onRun, canRun }) {
   const running = naive.status === "running" || naive.status === "preparing";
   const result = naive.result;
@@ -25,7 +27,7 @@ export function NaivePanel({ naive, onRun, canRun }) {
         </p>
         <p className="mt-2 text-sm text-shadow/70">
           {result
-            ? `${result.sold} TGD venduti per ${result.receivedXRP.toFixed(6)} XRP`
+            ? `${formatTokens(result.sold)} TGD venduti per ${result.receivedXRP.toFixed(6)} XRP`
             : "Slippage su ordine singolo"}
         </p>
       </div>

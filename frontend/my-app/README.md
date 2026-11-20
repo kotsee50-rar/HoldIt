@@ -23,7 +23,7 @@ npm run dev             # http://localhost:5173
 | Comando | Cosa fa |
 |---|---|
 | `npm run dev` | Dev server Vite su `http://localhost:5173` |
-| `npm test` | Test della logica di stato (`src/lib/runState.js`), senza browser né bridge |
+| `npm test` | Test della logica di stato e del book (`src/lib/`), senza browser né bridge |
 | `npm run build` | Build di produzione in `dist/` |
 | `npm run lint` | ESLint |
 
@@ -40,7 +40,8 @@ npm run dev             # http://localhost:5173
 | `src/lib/runState.js` | Stato della UI, come funzione pura: traduce gli eventi del bridge. |
 | `src/lib/runState.test.js` | Test di `runState.js`. |
 | `src/hooks/useBridge.js` | Collega lo stream SSE allo stato React e espone `execute`. |
-| `src/components/` | Barra di stato, pannello naive, pannello guarded. |
+| `src/components/` | Barra di stato, pannello naive, pannello guarded, book (`OrderBookPanel`), barra di replay (`ReplayBar`). |
+| `src/lib/book.js`, `src/hooks/useBook.js` | Righe del book da `GET /book`, aggiornato ogni 3 secondi e alla fine di ogni run. |
 | `src/App.jsx` | Layout, campi importo e mandato. |
 
 ## Regole di routing degli eventi

@@ -1,3 +1,5 @@
+import { formatTokens } from "../lib/format.js";
+
 export function GuardedPanel({ guarded, onRun, canRun }) {
   const running = guarded.status === "running";
   const result = guarded.result;
@@ -41,7 +43,7 @@ export function GuardedPanel({ guarded, onRun, canRun }) {
 
       {result && (
         <p className="mt-4 text-sm text-shadow">
-          Risultato: {result.sold} TGD per {result.receivedXRP.toFixed(6)} XRP, slippage {result.slippagePct.toFixed(3)}%, stato {result.status}.
+          Risultato: {formatTokens(result.sold)} TGD per {result.receivedXRP.toFixed(6)} XRP, slippage {result.slippagePct.toFixed(3)}%, stato {result.status}.
         </p>
       )}
     </div>

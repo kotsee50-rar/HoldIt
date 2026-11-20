@@ -74,7 +74,7 @@ test("guarded chunk lines show slippage and progress", () => {
     { type: "chunk", mode: "guarded", index: 2, sold: 7000, progressPct: 35, avgPrice: 0.0000998, slippagePct: 0.2 },
   ]);
   assert.equal(s.guarded.progressPct, 35);
-  assert.equal(s.guarded.log[0], "[CHUNK 2] Sold 7000 @ avg 0.00009980 | Slippage: 0.200%");
+  assert.equal(s.guarded.log[0], "[CHUNK 2] Sold 7.000 @ avg 0.00009980 | Slippage: 0.200%");
 });
 
 test("engine events without a mode are ignored", () => {
