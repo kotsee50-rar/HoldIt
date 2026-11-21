@@ -81,8 +81,9 @@ Wait for the line `Connected to wss://s.altnet.rippletest.net:51233` before goin
 Check the bridge: open `http://127.0.0.1:8787/health`. It should show `"online":true`.
 
 ### 3. Client side: the web interface (terminal 2)
+Open a new terminal in the `HoldIt` folder (the one you cloned in step 1), then:
 ```bash
-cd HoldIt/frontend/my-app
+cd frontend/my-app
 npm ci
 npm run dev
 ```
