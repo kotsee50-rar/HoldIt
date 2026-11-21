@@ -118,6 +118,7 @@ The live Testnet suites (`npm run test:live`, `npm run test:adversary`) send rea
 ## Resources
 
 - <a href="https://youtu.be/BjG-kX53HP0">Demo video on Youtube</a>
+- [Demo video (MP4, download)](https://github.com/kotsee50-rar/HoldIt/raw/main/docs/HoldIt_demo_video.mp4)
 - [Pitch PDF](docs/HoldIt_pitch.pdf)
 
 ## Authors
