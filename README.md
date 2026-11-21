@@ -46,12 +46,12 @@ Live runs are saved under `agent/recordings/live/` (not committed). Two curated 
 - `frontend`: 16 unit tests (`npm test`) and 6 browser tests (`npm run test:e2e`, needs the bridge and the dev server running).
 
 ### Running the demo
-The pitch deck is `docs/HoldIt!_pitch.pdf` and a recording of a live run on the testnet is `docs/1121.mp4`. Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
+The pitch deck and the demo video are listed under [Resources](#resources). Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
 
 ## Resources
 
 - <a href="https://youtu.be/BjG-kX53HP0">Demo video on Youtube</a>
-- [Pitch PDF]("docs/HoldIt!_pitch.pdf")
+- [Pitch PDF](docs/HoldIt!_pitch.pdf)
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
