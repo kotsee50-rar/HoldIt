@@ -6,7 +6,7 @@
 
 ## Index
 - <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
-- <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
+- <a href="https://github.com/kotsee50-rar/HoldIt#what-it-does-and-what-it-does-not">What it does and what it does not</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#technical-details">Technical details</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#authors">Authors</a>
 
