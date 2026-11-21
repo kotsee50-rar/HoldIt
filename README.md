@@ -1,7 +1,7 @@
 <div align=center>
   <img src="docs/HoldIt!.png" width="128" align="center">
   <h1>HoldIt!</h1>
-  <p>HoldIt! is an execution engine for DAO treasuries on the XRP Ledger. It sells a large token position in depth-aware chunks, with an on-chain minimum price on every chunk, and it shows the result next to a naive single market sell.</p>
+  <p>Stop burning treasury capital! HoldIt! is XRPL's confidential execution engine. It liquidates massive DAO positions with strict slippage control and zero market signaling via automated order slicing.</p>
 </div>
 
 ## Index
