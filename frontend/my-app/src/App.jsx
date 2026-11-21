@@ -43,7 +43,7 @@ export default function App() {
 
       <section className="mb-6 flex flex-wrap items-end gap-4 rounded-xl border border-silver bg-silver/30 p-4">
         <label className="text-sm text-shadow/70">
-          Quantità (TGD)
+          Amount (TGD)
           <input
             type="number"
             min="1"
@@ -53,7 +53,7 @@ export default function App() {
           />
         </label>
         <label className="text-sm text-shadow/70">
-          Mandato di slippage (%)
+          Slippage mandate (%)
           <input
             type="number"
             min="0.01"
@@ -64,7 +64,7 @@ export default function App() {
           />
         </label>
         {state.error && (
-          <p className="rounded-lg bg-shadow px-3 py-2 text-sm font-semibold text-ghost" role="alert">Errore: {state.error}</p>
+          <p className="rounded-lg bg-shadow px-3 py-2 text-sm font-semibold text-ghost" role="alert">Error: {state.error}</p>
         )}
       </section>
 

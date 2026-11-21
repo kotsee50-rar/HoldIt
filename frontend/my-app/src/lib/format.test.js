@@ -9,9 +9,9 @@ test("numbers below 1,000 have no separator", () => {
 });
 
 test("from 1,000 upwards the thousands are separated, consistently", () => {
-  assert.equal(formatTokens(1000), "1.000");
-  assert.equal(formatTokens(9000), "9.000");
-  assert.equal(formatTokens(10000), "10.000");
-  assert.equal(formatTokens(100000), "100.000");
-  assert.equal(formatTokens(1234567), "1.234.567");
+  assert.equal(formatTokens(1000), "1,000");
+  assert.equal(formatTokens(9000), "9,000");
+  assert.equal(formatTokens(10000), "10,000");
+  assert.equal(formatTokens(100000), "100,000");
+  assert.equal(formatTokens(1234567), "1,234,567");
 });

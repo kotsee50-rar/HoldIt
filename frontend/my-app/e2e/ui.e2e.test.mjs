@@ -42,7 +42,7 @@ before(async () => {
   page = await browser.newPage({ viewport: { width: 1400, height: 1000 } });
   page.on("pageerror", (error) => pageErrors.push(error.message));
   await page.goto(APP, { waitUntil: "networkidle" });
-  await page.waitForSelector("text=Pronto", { timeout: 15_000 });
+  await page.waitForSelector("text=Ready", { timeout: 15_000 });
 }, { timeout: 60_000 });
 
 after(async () => {
@@ -50,10 +50,10 @@ after(async () => {
 });
 
 const idle = (timeout = 120_000) =>
-  page.waitForFunction(() => !document.body.innerText.includes("Run in corso"), null, { timeout });
+  page.waitForFunction(() => !document.body.innerText.includes("Run in progress"), null, { timeout });
 
 test("the page shows the bridge as connected and ready", async () => {
-  assert.ok(await page.locator("text=Pronto").first().isVisible());
+  assert.ok(await page.locator("text=Ready").first().isVisible());
 });
 
 test("the order book shows the ten bid levels", async () => {
@@ -63,24 +63,24 @@ test("the order book shows the ten bid levels", async () => {
 
 test("the naive replay shows its recorded result", async () => {
   await page.getByRole("button", { name: /Replay naive/ }).click();
-  await page.waitForFunction(() => document.body.innerText.includes("100.000 TGD venduti"), null, { timeout: 60_000 });
-  assert.match(await page.locator("text=/TGD venduti/").first().textContent(), /^100\.000 TGD venduti/);
+  await page.waitForFunction(() => document.body.innerText.includes("100,000 TGD sold"), null, { timeout: 60_000 });
+  assert.match(await page.locator("text=/TGD sold/").first().textContent(), /^100,000 TGD sold/);
   await idle();
 });
 
 test("the guarded replay shows its recorded result and log", async () => {
   await page.getByRole("button", { name: /Replay guarded/ }).click();
-  await page.waitForFunction(() => document.body.innerText.includes("Risultato:"), null, { timeout: 120_000 });
-  assert.match(await page.locator("text=/Risultato:/").first().textContent(), /stato completed/);
+  await page.waitForFunction(() => document.body.innerText.includes("Result:"), null, { timeout: 120_000 });
+  assert.match(await page.locator("text=/Result:/").first().textContent(), /status completed/);
   await idle();
 });
 
-test("a live naive sale of 1.000 TGD completes and uses the Italian number format", async () => {
+test("a live naive sale of 1,000 TGD completes and uses the English number format", async () => {
   await page.locator("input[type=number]").first().fill("1000");
   await page.getByRole("button", { name: /Market Sell/ }).click();
   // Wait for this sale's own result: the panel still shows the previous replay until then.
-  await page.waitForFunction(() => document.body.innerText.includes("1.000 TGD venduti"), null, { timeout: 120_000 });
-  assert.match(await page.locator("text=/TGD venduti/").first().textContent(), /^1\.000 TGD venduti/);
+  await page.waitForFunction(() => document.body.innerText.includes("1,000 TGD sold"), null, { timeout: 120_000 });
+  assert.match(await page.locator("text=/TGD sold/").first().textContent(), /^1,000 TGD sold/);
   await idle();
 });
 

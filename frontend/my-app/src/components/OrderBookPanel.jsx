@@ -11,26 +11,26 @@ export function OrderBookPanel({ book }) {
       <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
         <h2 className="text-xl font-bold text-shadow">Order book (bid TGD)</h2>
         <span className="font-mono text-xs text-shadow/70">
-          {data?.offline ? "Ladder configurato (bridge offline)" : "Bid correnti sul testnet"}
-          {data && ` · profondità ${formatTokens(depth)} TGD`}
+          {data?.offline ? "Configured ladder (bridge offline)" : "Current bids on testnet"}
+          {data && ` · depth ${formatTokens(depth)} TGD`}
         </span>
       </div>
 
       {book.status === "error" && (
-        <p className="rounded-lg bg-shadow px-3 py-2 text-sm font-semibold text-ghost">Errore: {book.error}</p>
+        <p className="rounded-lg bg-shadow px-3 py-2 text-sm font-semibold text-ghost">Error: {book.error}</p>
       )}
-      {book.status === "loading" && <p className="text-sm text-shadow/70">Caricamento del book...</p>}
+      {book.status === "loading" && <p className="text-sm text-shadow/70">Loading order book...</p>}
 
       {rows.length > 0 && (
         <div className="overflow-x-auto">
           <table className="w-full font-mono text-xs text-shadow">
             <thead>
               <tr className="border-b border-shadow/30 text-left text-shadow/70">
-                <th className="py-2 pr-3 font-normal">Livello</th>
+                <th className="py-2 pr-3 font-normal">Level</th>
                 <th className="py-2 pr-3 font-normal">Prezzo (XRP/TGD)</th>
                 <th className="py-2 pr-3 font-normal">TGD</th>
                 <th className="py-2 pr-3 font-normal">XRP</th>
-                <th className="w-1/3 py-2 font-normal">Profondità</th>
+                <th className="w-1/3 py-2 font-normal">Depth</th>
               </tr>
             </thead>
             <tbody>
@@ -53,7 +53,7 @@ export function OrderBookPanel({ book }) {
       )}
 
       <p className="mt-4 text-xs text-shadow/70">
-        Liquidità simulata: il market maker del progetto ricarica i livelli a prezzi fissi. Non è un mercato reale.
+        Simulated liquidity: the project's market maker refills the levels at fixed prices. This is not a real market.
       </p>
     </section>
   );

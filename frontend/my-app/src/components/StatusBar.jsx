@@ -1,10 +1,10 @@
 import { BRIDGE_URL } from "../lib/bridge.js";
 
 function describe(state) {
-  if (!state.connected) return { text: "Bridge non connesso", dot: "bg-pale" };
-  if (state.online === false) return { text: "Bridge offline: solo replay disponibile", dot: "bg-pale" };
-  if (state.busy) return { text: "Run in corso", dot: "bg-frost" };
-  return { text: "Pronto", dot: "bg-frost" };
+  if (!state.connected) return { text: "Bridge not connected", dot: "bg-pale" };
+  if (state.online === false) return { text: "Bridge offline: replay only", dot: "bg-pale" };
+  if (state.busy) return { text: "Run in progress", dot: "bg-frost" };
+  return { text: "Ready", dot: "bg-frost" };
 }
 
 export function StatusBar({ state }) {

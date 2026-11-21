@@ -2,7 +2,7 @@
 export function ReplayBar({ onReplay, canReplay }) {
   return (
     <section className="mb-6 flex flex-wrap items-center gap-3 rounded-xl border border-silver bg-silver/30 p-4">
-      <span className="text-sm text-shadow/70">Riproduci una demo registrata (funziona anche senza testnet):</span>
+      <span className="text-sm text-shadow/70">Replay a recorded demo (works without testnet):</span>
       <button
         type="button"
         onClick={() => onReplay("demo-naive")}
