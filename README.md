@@ -1,5 +1,5 @@
 <div align=center>
-  <img src="docs/HoldIt!.png" width="128" align="center">
+  <img src="docs/HoldIt.png" width="128" align="center">
   <h1>HoldIt!</h1>
   <p>Stop burning treasury capital! HoldIt! is XRPL's confidential execution engine. It liquidates massive DAO positions with strict slippage control and zero market signaling via automated order slicing.</p>
 </div>
@@ -8,7 +8,7 @@
 - <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#features">Features</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#technical-details">Technical details</a>
-- <a href="https://github.com/kotsee50-rar/HoldIt#run-it-yourself">Run it yourself</a>
+- <a href="https://github.com/kotsee50-rar/HoldIt#installation">Installation</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#resources">Resources</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#authors">Authors</a>
 
@@ -49,7 +49,7 @@ Live runs are saved under `agent/recordings/live/` (not committed). Two curated 
 ### Running the demo
 The pitch deck and the demo video are listed under [Resources](#resources). Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
 
-## Run it yourself
+## Installation
 
 You need no account and no real funds. Everything runs on the **XRP Ledger Testnet**, with test tokens that have no value.
 
@@ -118,7 +118,7 @@ The live Testnet suites (`npm run test:live`, `npm run test:adversary`) send rea
 ## Resources
 
 - <a href="https://youtu.be/BjG-kX53HP0">Demo video on Youtube</a>
-- [Pitch PDF](docs/HoldIt!_pitch.pdf)
+- [Pitch PDF](docs/HoldIt_pitch.pdf)
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
