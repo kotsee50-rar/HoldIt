@@ -21,7 +21,7 @@ HoldIt! sells the position in smaller chunks. Before each chunk it reads the **D
 - **It limits the price impact** of a sale compared with one market order, and the minimum price on each chunk is enforced by the ledger.
 - **It does not hide the position.** The order book and every transaction are public on the XRPL. Anyone can see the chunks as they execute.
 - **It does not prevent front-running.** A visible sale can still be front-run. The on-chain minimum limits how far the price can be pushed against the treasury, but it does not stop the attack. See `docs/PITCH_MEV_NOTE.md`.
-- **The floor is set from the best bid when the run starts.** If someone moves the book before the run, the floor moves too. This is a known limit; see `agent/test/adversary.live.test.js`.
+- **The floor is anchored to the mandate's reference price** (`BASE_PRICE`), not to the book. The naive sale is measured against the book at its start, so it can differ from the guarded reference if the book is moved first. The engine's default (no anchor) uses the best bid at the start; that default is a known limit, see `agent/test/adversary.live.test.js`.
 - **It runs on the XRPL testnet.** The demo uses simulated tokens and a simulated market maker. It is not connected to a live market and is not audited.
 
 ## Technical details

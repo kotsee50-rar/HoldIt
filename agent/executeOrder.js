@@ -11,7 +11,7 @@
 import xrpl from "xrpl";
 import {
   CHUNK_MAX, DEMO_AMOUNT, LIQUIDITY_TIMEOUT_MS, MAX_SLIPPAGE_PCT, MIN_CHUNK, PARTICIPATION, POLL_MS,
-  TOKEN_CURRENCY, TOKEN_ISSUER,
+  BASE_PRICE, TOKEN_CURRENCY, TOKEN_ISSUER,
 } from "./config.js";
 import {
   connect, formatIou, getBids, getTokenBalance, isMain, loadWallets, parseFill, sleep, toDrops, tokenAmount,
@@ -69,8 +69,10 @@ export async function executeOrder(client, wallet, totalAmount, maxSlippagePerce
     pollMs = POLL_MS,
     liquidityTimeoutMs = LIQUIDITY_TIMEOUT_MS,
     onEvent = logEvent,
-    // Optional anchored reference (XRP per token). Without it the reference is the best bid
-    // when the sale starts, so a book moved before the sale moves the floor too.
+    // Reference price (XRP per token). The bridge and the demo pass BASE_PRICE, the mandate's
+    // reference, so the floor cannot be moved by the book. Without it the reference is the best
+    // bid when the sale starts: a book moved before the sale then moves the floor too (known limit,
+    // tested in test/adversary.live.test.js).
     referencePrice: anchoredReference,
   } = options;
   // Every engine event carries mode, so a client can route by it without special cases.
@@ -216,7 +218,7 @@ async function main() {
     mm = startMarketMaker(client, marketMaker, await seedLadder(client, marketMaker));
   }
 
-  const summary = await executeOrder(client, treasury, amount, maxSlippage);
+  const summary = await executeOrder(client, treasury, amount, maxSlippage, { referencePrice: BASE_PRICE });
   if (mm) await mm.stop();
   console.log(`\nExecution ${summary.status}${summary.reason ? ` (${summary.reason})` : ""}, ${summary.chunks} chunk(s)`);
   printSummary(summary);
