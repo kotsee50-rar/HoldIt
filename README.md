@@ -1,5 +1,5 @@
 <div align=center>
-  <img src="images/HoldIt!.png" width="128" align="center">
+  <img src="docs/HoldIt!.png" width="128" align="center">
   <h1>HoldIt!</h1>
   <p>HoldIt! is an execution engine for DAO treasuries on the XRP Ledger. It sells a large token position in depth-aware chunks, with an on-chain minimum price on every chunk, and it shows the result next to a naive single market sell.</p>
 </div>
@@ -8,6 +8,7 @@
 - <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#features">Features</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#technical-details">Technical details</a>
+- <a href="https://github.com/kotsee50-rar/HoldIt#resources">Resources</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#authors">Authors</a>
 
 ## Description
@@ -46,6 +47,11 @@ Live runs are saved under `agent/recordings/live/` (not committed). Two curated 
 
 ### Running the demo
 See `docs/DEMO_RUNBOOK.md` for the checklist and `docs/PROJECT_GUIDE.md` for a full walkthrough. Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
+
+## Resources
+
+- <a href="https://youtu.be/BjG-kX53HP0">Demo video on Youtube</a>
+- [Pitch PDF]("docs/HoldIt!_pitch.pdf")
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
