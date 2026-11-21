@@ -146,7 +146,7 @@ Il market maker non rappresenta domanda indipendente: è un attore controllato d
 In `executeOrder(client, wallet, totalAmount, maxSlippagePercent, options)`, i valori percentuali sono espressi come numeri percentuali: `0.5` significa 0,5%.
 
 1. **Controllo saldo e book**: legge il saldo token della tesoreria e rifiuta quantità superiori; poi legge i bid. Un book vuoto interrompe l’esecuzione.
-2. **Prezzo di riferimento**: di default è il miglior bid iniziale. L’opzione `referencePrice` lo ancora a un prezzo scelto prima della vendita; bridge e demo usano ancora il default, vedere la sezione 11.
+2. **Prezzo di riferimento**: di default è il miglior bid iniziale. L’opzione `referencePrice` lo ancora a un prezzo scelto prima della vendita; bridge, demo e CLI passano `BASE_PRICE`, quindi il floor non si sposta con il book.
 3. **Price floor**: calcola `minPrice = referencePrice × (1 − maxSlippagePercent / 100)`. Per esempio con 0,5%, la vendita non accetta offerte inferiori al 99,5% del prezzo di riferimento.
 4. **Liquidità in banda**: prima di ogni chunk rilegge i bid ed esclude quelli posseduti dalla tesoreria. Somma i token disponibili con prezzo `>= minPrice`.
 5. **Attesa o stop**: se la liquidità sicura è inferiore al minimo necessario, aspetta e ripete la lettura ogni `POLL_MS`. Se non torna entro `LIQUIDITY_TIMEOUT_MS`, termina `halted`, potenzialmente con fill parziale.
@@ -276,7 +276,7 @@ Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:
 - **Il refill è l’assunzione centrale della demo.** Prezzi fissi e liquidità rigenerata sono intenzionali, ma non descrivono un market maker esterno che accetta di ricomprare a quei livelli.
 - **Slippage qui è una metrica relativa al miglior bid iniziale.** Il codice calcola `(referencePrice - avgPrice) / referencePrice × 100`. Può risultare negativo se il prezzo medio supera il riferimento.
 - **Fill parziale non equivale a ordine completato.** Controllare `status`, `reason` e quantità `sold` rispetto a `totalAmount`.
-- **Il riferimento va ancorato contro chi muove il book prima della vendita.** Di default il riferimento è il miglior bid all’avvio: se un attaccante ha già svuotato i livelli alti, il floor scende con il mercato. `npm run test:adversary` lo dimostra sul testnet. Con `referencePrice` esplicito il floor resta quello del mandato, e la vendita si ferma senza vendere sotto. Bridge e demo non usano ancora un riferimento ancorato: è una decisione da prendere.
+- **Il riferimento è ancorato al mandato.** Bridge, demo e CLI passano `BASE_PRICE`: se un attaccante svuota i livelli alti, il floor resta quello del mandato e la vendita si ferma senza vendere sotto. Il default di `executeOrder` (miglior bid all’avvio) resta vulnerabile: `npm run test:adversary` lo dimostra sul testnet.
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
 - **Il refill e i test di rete dipendono da Testnet e faucet.** Il faucet può essere rate-limited; il codice tenta il top-up e restituisce un errore leggibile se fallisce.
 - **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV. Sul rischio di front-running su XRPL, oggetto di un dibattito pubblico nel 2026, vedere `docs/PITCH_MEV_NOTE.md`.

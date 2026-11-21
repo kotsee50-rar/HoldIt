@@ -26,7 +26,7 @@ import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
 import {
-  AGENT_DIR, DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, NETWORK, TOKEN_CURRENCY, TOKEN_ISSUER,
+  AGENT_DIR, BASE_PRICE, DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, NETWORK, TOKEN_CURRENCY, TOKEN_ISSUER,
 } from "./config.js";
 import { connect, ensureConnected, getBids, isMain, loadWallets, sleep, topUpTreasury } from "./xrplHelpers.js";
 import { seedLadder, startMarketMaker } from "./marketMaker.js";
@@ -198,7 +198,12 @@ async function runExecute({ mode, amount, maxSlippage, reset }) {
   const seqs = await seedLadder(client, wallets.marketMaker);
   const marketMaker = startMarketMaker(client, wallets.marketMaker, seqs);
   try {
-    return await executeOrder(client, wallets.treasury, amount, maxSlippage, { onEvent: broadcast });
+    // Anchored to the mandate's reference price, not to the book: a book moved before the run
+    // cannot move the floor (see executeOrder's referencePrice option).
+    return await executeOrder(client, wallets.treasury, amount, maxSlippage, {
+      onEvent: broadcast,
+      referencePrice: BASE_PRICE,
+    });
   } finally {
     await marketMaker.stop();
   }

@@ -3,7 +3,7 @@
 //
 //   npm run demo                    (uses DEMO_AMOUNT and MAX_SLIPPAGE_PCT from .env)
 //   npm run demo -- 50000 0.5
-import { DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, TOKEN_ISSUER } from "./config.js";
+import { BASE_PRICE, DEMO_AMOUNT, LADDER, MAX_SLIPPAGE_PCT, TOKEN_ISSUER } from "./config.js";
 import { connect, formatIou, loadWallets, topUpTreasury } from "./xrplHelpers.js";
 import { describeLadder, seedLadder, startMarketMaker } from "./marketMaker.js";
 import { naiveSell, printSummary } from "./naiveSell.js";
@@ -36,7 +36,7 @@ async function main() {
   console.log("Resetting the book to the same starting state...");
   const seqs = await seedLadder(client, marketMaker);
   const mm = startMarketMaker(client, marketMaker, seqs);
-  const guarded = await executeOrder(client, treasury, amount, maxSlippage);
+  const guarded = await executeOrder(client, treasury, amount, maxSlippage, { referencePrice: BASE_PRICE });
   await mm.stop();
   console.log(`\nExecution ${guarded.status}${guarded.reason ? ` (${guarded.reason})` : ""}, ${guarded.chunks} chunk(s)`);
   printSummary(guarded);
@@ -50,7 +50,7 @@ async function main() {
       "slippage %": naive.slippagePct.toFixed(2),
       "time s": (naive.durationMs / 1000).toFixed(1),
     },
-    HoldIt!: {
+    "HoldIt!": {
       sold: formatIou(guarded.sold),
       "XRP received": guarded.receivedXRP.toFixed(6),
       "slippage %": guarded.slippagePct.toFixed(2),
