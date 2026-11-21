@@ -28,7 +28,7 @@ async function main() {
 
   console.log("\n=== 1. The disaster: naive market sell ===");
   await seedLadder(client, marketMaker);
-  const naive = await naiveSell(client, treasury, amount, { issuer: TOKEN_ISSUER });
+  const naive = await naiveSell(client, treasury, amount, { issuer: TOKEN_ISSUER, referencePrice: BASE_PRICE });
   printSummary(naive);
   console.log(`   Slippage ${naive.slippagePct.toFixed(2)}% - Value destroyed`);
 

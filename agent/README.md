@@ -41,7 +41,7 @@ Demo completa su un clone pulito di `main`, 20/11/2026: 78 s in tutto. Le cifre 
 
 ## Come funziona
 
-1. **Prezzo di riferimento**: `BASE_PRICE` (il miglior bid del ladder simulato), passato da bridge, demo e CLI come `referencePrice`. Il book non sposta il floor. Senza `referencePrice`, `executeOrder` usa il miglior bid all'avvio (`book_offers`): in quel caso un book mosso prima della vendita sposta il floor, vedere `npm run test:adversary`.
+1. **Prezzo di riferimento**: `BASE_PRICE` (il miglior bid del ladder simulato), passato da bridge, demo e CLI come `referencePrice`, sia alla guarded sia alla naive. Il book non sposta né il floor né lo slippage. Senza `referencePrice`, `executeOrder` usa il miglior bid all'avvio (`book_offers`): in quel caso un book mosso prima della vendita sposta il floor, vedere `npm run test:adversary`.
 2. **Prezzo minimo**: `riferimento × (1 − maxSlippage)`.
 3. **Chunk adattivo**: per ogni chunk l'engine misura la liquidità sopra il prezzo minimo
    e ne prende una frazione (`PARTICIPATION`, massimo `CHUNK_MAX`). Se la liquidità non basta, aspetta che il book si ricarichi;

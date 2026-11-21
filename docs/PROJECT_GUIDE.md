@@ -107,7 +107,6 @@ Il README di root presenta il pitch e rimanda ai documenti operativi. Questa gui
 | `docs/PITCH_MEV_NOTE.md` | Nota per il pitch: distingue le affermazioni supportate, le cautele e i limiti della demo sul tema MEV/front-running. |
 | `agent/connect-test.js` | Smoke check manuale di connessione e faucet Testnet. |
 | `docs/` | Guida progetto, runbook operativo e nota MEV per il pitch. |
-| `frontend/my-app/src/App.css`, `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`, `frontend/my-app/public/icons.svg` | File non importati dall’app attiva o non referenziati dalla pagina; residui/asset non utilizzati, non parti del flusso applicativo. |
 
 ## 4. Architettura e dipendenze tra moduli
 
@@ -165,7 +164,7 @@ Le transazioni vengono inviate al ledger e poi misurate dai metadati validati. `
 1. `npm run setup` crea **issuer**, **treasury** e **market maker** tramite faucet Testnet. Finanzia anche il market maker per sostenere gli XRP del ladder e le riserve di account (1 XRP di base più 0,2 XRP per ogni oggetto posseduto, come offerte e trust line: vedere il glossario, sezione 13).
 2. Tesoreria e market maker creano le trust line verso l’issuer; l’issuer invia TGD alla tesoreria.
 3. `seedLadder()` pubblica un livello di bid per ogni configurazione in `LADDER`. Il market maker usa `OfferSequence` per sostituire atomicamente gli ordini esistenti dove possibile e cancella eventuali offerte in eccesso.
-4. La vendita naive consuma il book con un unico IOC. Poiché il ladder ha livelli più bassi, un ordine grande può ricevere un prezzo medio inferiore al miglior bid iniziale.
+4. La vendita naive consuma il book con un unico IOC. Poiché il ladder ha livelli più bassi, un ordine grande può ricevere un prezzo medio inferiore al prezzo di riferimento.
 5. La demo ripristina il ladder e avvia il ciclo di refill del market maker. L’engine guarded esegue chunk limitati dal prezzo minimo mentre il market maker reintegra i livelli consumati ai prezzi configurati.
 6. Al termine, la demo confronta token venduti, XRP ricevuti, prezzo medio, slippage e durata.
 
@@ -176,7 +175,7 @@ Il market maker non rappresenta domanda indipendente: è un attore controllato d
 In `executeOrder(client, wallet, totalAmount, maxSlippagePercent, options)`, i valori percentuali sono espressi come numeri percentuali: `0.5` significa 0,5%.
 
 1. **Controllo saldo e book**: legge il saldo token della tesoreria e rifiuta quantità superiori; poi legge i bid. Un book vuoto interrompe l’esecuzione.
-2. **Prezzo di riferimento**: di default è il miglior bid iniziale. L’opzione `referencePrice` lo ancora a un prezzo scelto prima della vendita; bridge, demo e CLI passano `BASE_PRICE`, quindi il floor non si sposta con il book.
+2. **Prezzo di riferimento**: di default è il miglior bid iniziale. L’opzione `referencePrice` lo ancora a un prezzo scelto prima della vendita; bridge, demo e CLI passano `BASE_PRICE` sia alla guarded sia alla naive, quindi né il floor né lo slippage si spostano con il book.
 3. **Price floor**: calcola `minPrice = referencePrice × (1 − maxSlippagePercent / 100)`. Per esempio con 0,5%, la vendita non accetta offerte inferiori al 99,5% del prezzo di riferimento.
 4. **Liquidità in banda**: prima di ogni chunk rilegge i bid ed esclude quelli posseduti dalla tesoreria. Somma i token disponibili con prezzo `>= minPrice`.
 5. **Attesa o stop**: se la liquidità sicura è inferiore al minimo necessario, aspetta e ripete la lettura ogni `POLL_MS`. Se non torna entro `LIQUIDITY_TIMEOUT_MS`, termina `halted`, potenzialmente con fill parziale.
@@ -189,7 +188,7 @@ La soglia on-chain limita il prezzo accettato per i chunk. L’engine può comun
 
 ### Strategia naive
 
-`naiveSell()` usa un singolo ordine IOC + Sell per tutti i token richiesti e imposta `TakerPays: "1"` drop: in pratica non impone una soglia economica significativa. Può quindi attraversare più livelli del book fino alla quantità disponibile. La funzione restituisce i dati osservati dai metadati, il prezzo di riferimento iniziale e lo slippage rispetto a quel riferimento. Nel suo riepilogo `status: "completed"` significa che c’è stato un fill; non garantisce che sia stata venduta tutta la quantità. Confrontare sempre `sold` con `totalAmount`.
+`naiveSell()` usa un singolo ordine IOC + Sell per tutti i token richiesti e imposta `TakerPays: "1"` drop: in pratica non impone una soglia economica significativa. Può quindi attraversare più livelli del book fino alla quantità disponibile. La funzione accetta `referencePrice` come la guarded; bridge, demo e CLI passano `BASE_PRICE`. Restituisce i dati osservati dai metadati, il riferimento e lo slippage rispetto a quel riferimento. Nel suo riepilogo `status: "completed"` significa che c’è stato un fill; non garantisce che sia stata venduta tutta la quantità. Confrontare sempre `sold` con `totalAmount`.
 
 ## 8. Eventi dell’engine e bridge web
 
@@ -304,7 +303,7 @@ Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:
 ## 11. Note operative e limiti interpretativi
 
 - **Il refill è l’assunzione centrale della demo.** Prezzi fissi e liquidità rigenerata sono intenzionali, ma non descrivono un market maker esterno che accetta di ricomprare a quei livelli.
-- **Slippage qui è una metrica relativa al miglior bid iniziale.** Il codice calcola `(referencePrice - avgPrice) / referencePrice × 100`. Può risultare negativo se il prezzo medio supera il riferimento.
+- **Slippage qui è una metrica relativa al prezzo di riferimento.** Il codice calcola `(referencePrice - avgPrice) / referencePrice × 100`. Può risultare negativo se il prezzo medio supera il riferimento.
 - **Fill parziale non equivale a ordine completato.** Controllare `status`, `reason` e quantità `sold` rispetto a `totalAmount`.
 - **Il riferimento è ancorato al mandato.** Bridge, demo e CLI passano `BASE_PRICE`: se un attaccante svuota i livelli alti, il floor resta quello del mandato e la vendita si ferma senza vendere sotto. Il default di `executeOrder` (miglior bid all’avvio) resta vulnerabile: `npm run test:adversary` lo dimostra sul testnet.
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
@@ -387,7 +386,7 @@ Il rischio di front-running su XRPL è oggetto di dibattito pubblico (giugno 202
 
 - **Chunk**: una porzione di una vendita grande, eseguita con un ordine separato.
 - **Floor (prezzo minimo)**: `riferimento × (1 − mandato / 100)`. Nessun chunk viene eseguito sotto questo prezzo.
-- **Riferimento**: il prezzo da cui si misurano floor e slippage. Di default è il miglior bid all'avvio della vendita. Con l'opzione `referencePrice` può essere ancorato a un prezzo scelto prima.
+- **Riferimento**: il prezzo da cui si misurano floor e slippage. Di default è il miglior bid all'avvio della vendita. Con l'opzione `referencePrice` può essere ancorato a un prezzo scelto prima; bridge, demo e CLI usano `BASE_PRICE` per entrambe le strategie.
 - **Fill**: la quantità effettivamente eseguita da un ordine.
 - **Kill**: un chunk che non esegue nulla. Dopo cinque kill consecutivi la vendita si ferma.
 - **Halted**: la vendita si è fermata senza completare la quantità richiesta. `reason` spiega il motivo.

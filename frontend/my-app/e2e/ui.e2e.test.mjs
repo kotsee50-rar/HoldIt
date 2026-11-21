@@ -22,11 +22,19 @@ before(async () => {
     const body = await health.json();
     assert.equal(body.online, true, "the bridge must be online for this test (npm run server)");
     // A run left over from a previous test must be finished before we start.
-    for (let i = 0; i < 120; i++) {
-      const state = await (await fetch(`${BRIDGE}/health`)).json();
-      if (!state.busy) break;
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-    }
+    const waitIdle = async () => {
+      for (let i = 0; i < 120; i++) {
+        const state = await (await fetch(`${BRIDGE}/health`)).json();
+        if (!state.busy) return;
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
+    };
+    await waitIdle();
+    // Start from a full ladder: the book test expects all ten levels, and earlier runs leave it partly consumed.
+    const reset = await fetch(`${BRIDGE}/reset`, { method: "POST", headers: { "Content-Type": "application/json" }, body: "{}" });
+    assert.equal(reset.status, 202, "POST /reset must be accepted");
+    await new Promise((resolve) => setTimeout(resolve, 500));
+    await waitIdle();
   } catch (error) {
     throw new Error(`Bridge not reachable at ${BRIDGE}: ${error.message}`);
   }
