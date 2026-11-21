@@ -23,7 +23,7 @@ Eseguire nell'ordine indicato, dalla cartella `agent/`.
 | Passo | Comando | Esito atteso |
 |---|---|---|
 | Aggiornare e installare | `git switch main && git pull`; poi `npm ci` in `agent/` e `frontend/my-app/` | Nessun errore |
-| Test agente offline | `npm test` da `agent/` | 23 test passati |
+| Test agente offline | `npm test` da `agent/` | 24 test passati |
 | Test frontend offline | `npm test` da `frontend/my-app/` | 16 test passati |
 | Build frontend | `npm run build` da `frontend/my-app/` | Build completata |
 | Test sul testnet | `npm run test:live` | 5 test passati, circa 55 secondi |
