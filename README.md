@@ -8,6 +8,7 @@
 - <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#features">Features</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#technical-details">Technical details</a>
+- <a href="https://github.com/kotsee50-rar/HoldIt#run-it-yourself">Run it yourself</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#resources">Resources</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#authors">Authors</a>
 
@@ -47,6 +48,72 @@ Live runs are saved under `agent/recordings/live/` (not committed). Two curated 
 
 ### Running the demo
 The pitch deck and the demo video are listed under [Resources](#resources). Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
+
+## Run it yourself
+
+You need no account and no real funds. Everything runs on the **XRP Ledger Testnet**, with test tokens that have no value.
+
+### Requirements
+- Node.js 20.19 or newer (tested with Node 24). Check with `node -v`.
+- Git.
+- A browser: Chrome, Edge or Firefox.
+- An internet connection that can reach `wss://s.altnet.rippletest.net:51233` (the Testnet).
+
+Commands are for macOS and Linux. On Windows, run them in PowerShell; if PowerShell blocks `npm`, use `npm.cmd` instead.
+
+### 1. Get the code
+```bash
+git clone https://github.com/kotsee50-rar/HoldIt.git
+cd HoldIt
+```
+
+### 2. Server side: the engine and the bridge (terminal 1)
+```bash
+cd agent
+npm ci
+npm run setup      # creates three Testnet wallets, funds them from the faucet and writes agent/.env
+npm run mm -- --seed   # publishes the bid ladder once and exits
+npm run doctor     # checks the setup: no [FAIL] lines expected
+npm run server     # starts the bridge on http://127.0.0.1:8787 and keeps running
+```
+Wait for the line `Connected to wss://s.altnet.rippletest.net:51233` before going on. `npm run setup` takes about a minute. It writes `agent/.env` with Testnet seeds: keep that file private and do not commit it.
+
+Check the bridge: open `http://127.0.0.1:8787/health`. It should show `"online":true`.
+
+### 3. Client side: the web interface (terminal 2)
+Open a new terminal in the `HoldIt` folder (the one you cloned in step 1), then:
+```bash
+cd frontend/my-app
+npm ci
+npm run dev
+```
+Open `http://localhost:5173` in the browser. The status bar shows **Ready** and the order book shows ten bid levels.
+
+### 4. Try the demo
+1. Click **Replay naive** and **Replay guarded**. These replay recorded runs and do not use the ledger.
+2. Click **Run Market Sell (Naive)**, with the amount `100000`. Wait for **Ready**. Expected: slippage around 13–14%.
+3. Click **Start protected execution**. Expected: several chunks in the terminal panel, progress 100%, slippage around 0.1%, status `completed`.
+
+Every live run uses the Testnet. The order book is public, the way it is on the real XRP Ledger.
+
+### Troubleshooting
+| What you see | What to do |
+|---|---|
+| The status bar says "Bridge not connected" or "Bridge offline" | The bridge is not running, or it could not reach the Testnet. Run `npm run doctor`, then restart `npm run server` and wait for the `Connected` line. |
+| The order book is empty | Run `npm run mm -- --seed` in `agent/`, then reload the page. |
+| `npm run setup` fails with a faucet error | The Testnet faucet limits requests. Wait a few minutes and run `npm run setup` again. It only runs if `agent/.env` has no seeds yet. |
+| Port 8787 or 5173 is already in use | Close the other program using it, or stop the earlier `npm run server` / `npm run dev`. |
+| A button is grey | A run is in progress, or the bridge is offline. Wait for **Ready**. |
+| Error 409 in the log | Only one run at a time: wait for the current run to finish. |
+
+Run only one bridge at a time. Two bridges on the same Testnet accounts can interfere with each other.
+
+### Tests (optional)
+```bash
+cd agent && npm test                 # 24 offline tests, no network needed
+cd ../frontend/my-app && npm test    # 16 offline tests
+```
+The live Testnet suites (`npm run test:live`, `npm run test:adversary`) send real Testnet transactions and are not part of `npm test`.
 
 ## Resources
 
