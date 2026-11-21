@@ -3,7 +3,7 @@
 //
 //   npm run naive -- 100000
 import xrpl from "xrpl";
-import { DEMO_AMOUNT, TOKEN_CURRENCY, TOKEN_ISSUER } from "./config.js";
+import { BASE_PRICE, DEMO_AMOUNT, TOKEN_CURRENCY, TOKEN_ISSUER } from "./config.js";
 import { connect, formatIou, getBids, isMain, loadWallets, parseFill, tokenAmount } from "./xrplHelpers.js";
 
 const { tfImmediateOrCancel, tfSell } = xrpl.OfferCreateFlags;
@@ -13,11 +13,13 @@ const { tfImmediateOrCancel, tfSell } = xrpl.OfferCreateFlags;
  * Emits the same event types as executeOrder (start, chunk, done), so a client can
  * render both strategies with the same code: the naive sale is one chunk at 100%.
  */
-export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_ISSUER, onEvent = () => {} } = {}) {
+// referencePrice: the mandate reference (XRP per token). Callers pass BASE_PRICE so the book cannot move
+// it; without it the reference is the best bid at the start of the sale.
+export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_ISSUER, onEvent = () => {}, referencePrice: anchoredReference } = {}) {
   const startedAt = Date.now();
   const bids = await getBids(client, issuer);
   if (bids.length === 0) throw new Error("Order book is empty: start the market maker first.");
-  const referencePrice = bids[0].price;
+  const referencePrice = anchoredReference ?? bids[0].price;
   onEvent({ type: "start", mode: "naive", totalAmount, maxSlippagePercent: null, referencePrice, minPrice: 0 });
 
   const result = await client.submitAndWait(
@@ -74,7 +76,7 @@ export async function naiveSell(client, wallet, totalAmount, { issuer = TOKEN_IS
 export function printSummary(summary) {
   console.log(`   Sold:        ${formatIou(summary.sold)} / ${formatIou(summary.totalAmount)} ${TOKEN_CURRENCY}`);
   console.log(`   Received:    ${summary.receivedXRP.toFixed(6)} XRP`);
-  console.log(`   Reference:   ${summary.referencePrice.toFixed(8)} XRP/${TOKEN_CURRENCY} (best bid at start)`);
+  console.log(`   Reference:   ${summary.referencePrice.toFixed(8)} XRP/${TOKEN_CURRENCY}`);
   console.log(`   Avg price:   ${summary.avgPrice.toFixed(8)} XRP/${TOKEN_CURRENCY}`);
   console.log(`   Slippage:    ${summary.slippagePct.toFixed(2)}%`);
   console.log(`   Duration:    ${(summary.durationMs / 1000).toFixed(1)} s`);
@@ -85,7 +87,7 @@ async function main() {
   const client = await connect();
   const { treasury } = loadWallets();
   console.log(`\nNaive market sell of ${formatIou(amount)} ${TOKEN_CURRENCY}`);
-  const summary = await naiveSell(client, treasury, amount);
+  const summary = await naiveSell(client, treasury, amount, { referencePrice: BASE_PRICE });
   printSummary(summary);
   await client.disconnect();
 }

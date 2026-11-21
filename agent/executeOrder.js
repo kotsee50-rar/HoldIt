@@ -26,11 +26,11 @@ export function logEvent(event) {
     case "start":
       if (event.mode === "naive") {
         console.log(`\nNaive market sell of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, no price floor`);
-        console.log(`Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP`);
+        console.log(`Reference price: ${event.referencePrice.toFixed(8)} XRP`);
         break;
       }
       console.log(`\nGuarded execution of ${formatIou(event.totalAmount)} ${TOKEN_CURRENCY}, max slippage ${event.maxSlippagePercent}%`);
-      console.log(`Reference price (best bid): ${event.referencePrice.toFixed(8)} XRP | floor: ${event.minPrice.toFixed(8)} XRP`);
+      console.log(`Reference price: ${event.referencePrice.toFixed(8)} XRP | floor: ${event.minPrice.toFixed(8)} XRP`);
       break;
     case "chunk":
       console.log(
