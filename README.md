@@ -48,7 +48,9 @@ See `docs/DEMO_RUNBOOK.md` for the checklist and `docs/PROJECT_GUIDE.md` for a f
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
-- Vincenzo Basile
-- Andrea Cozzi
-- Flavio Iaconeta
-- Marta Vitali Roscini
+| Teammate | GitHub profile |
+| --- | --- |
+| Vincenzo Basile | **[@iamvinbas](https://github.com/iamvinbas)** |
+| Andrea Cozzi | **[@kotsee50-rar](https://github.com/kotsee50-rar)** |
+| Flavio Iaconeta | **[@MbeFlavj](https://github.com/mbeflavj)** |
+| Marta Vitali Roscini | **[@martaspart](https://github.com/martaspar)** |
