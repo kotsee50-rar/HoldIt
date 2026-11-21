@@ -57,7 +57,7 @@ export function reduce(state, event) {
     case "seeding":
       if (event.mode === "naive") return { ...state, naive: { ...state.naive, status: "preparing" } };
       if (event.mode === "guarded") {
-        return { ...state, guarded: { ...state.guarded, log: line(state.guarded.log, "[SYSTEM] Preparazione mercato...") } };
+        return { ...state, guarded: { ...state.guarded, log: line(state.guarded.log, "[SYSTEM] Preparing market...") } };
       }
       return state;
 
@@ -82,7 +82,7 @@ function startRun(state, event) {
         result: null,
         progressPct: 0,
         slippagePct: 0,
-        log: [`[SYSTEM] Avvio guarded${replayLabel(run.replay)} (ID: ${String(event.runId).slice(0, 8)})`],
+        log: [`[SYSTEM] Starting guarded${replayLabel(run.replay)} (ID: ${String(event.runId).slice(0, 8)})`],
       },
     };
   }
@@ -97,7 +97,7 @@ function endRun(state, event) {
   if (!event.ok) {
     return {
       ...base,
-      error: event.error ?? "Run fallito",
+      error: event.error ?? "Run failed",
       naive: mode === "naive" ? { ...state.naive, status: "failed" } : state.naive,
       guarded: mode === "guarded"
         ? { ...state.guarded, status: "failed", log: line(state.guarded.log, `[SYSTEM] FAILED: ${event.error}`) }
@@ -118,7 +118,7 @@ function endRun(state, event) {
         ...state.guarded,
         status: event.result.status,
         result: event.result,
-        log: line(state.guarded.log, `[SYSTEM] Run terminata: ${event.result.status}`),
+        log: line(state.guarded.log, `[SYSTEM] Run finished: ${event.result.status}`),
       },
     };
   }
@@ -147,13 +147,13 @@ function guardedEvent(state, event) {
         ...state,
         guarded: {
           ...g,
-          log: line(g.log, `[START] ${event.totalAmount} token, mandato ${event.maxSlippagePercent}%, floor ${event.minPrice.toFixed(8)} XRP`),
+          log: line(g.log, `[START] ${event.totalAmount} token, mandate ${event.maxSlippagePercent}%, floor ${event.minPrice.toFixed(8)} XRP`),
         },
       };
     case "waiting":
-      return { ...state, guarded: { ...g, log: line(g.log, "[WAIT] In attesa di liquidità in-band...") } };
+      return { ...state, guarded: { ...g, log: line(g.log, "[WAIT] Waiting for in-band liquidity...") } };
     case "killed":
-      return { ...state, guarded: { ...g, log: line(g.log, `[KILLED] Chunk ${event.index}: nessun fill, ritento`) } };
+      return { ...state, guarded: { ...g, log: line(g.log, `[KILLED] Chunk ${event.index}: no fill, retrying`) } };
     case "chunk":
       return {
         ...state,

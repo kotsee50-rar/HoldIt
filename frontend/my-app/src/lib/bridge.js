@@ -13,11 +13,11 @@ export async function postJson(path, body) {
       body: JSON.stringify(body),
     });
   } catch {
-    return { ok: false, error: `Bridge non raggiungibile su ${BRIDGE_URL}. È acceso?` };
+    return { ok: false, error: `Bridge not reachable at ${BRIDGE_URL}. Is it running?` };
   }
   if (!res.ok) {
     const data = await res.json().catch(() => ({}));
-    return { ok: false, error: data.error ?? `Errore HTTP ${res.status}` };
+    return { ok: false, error: data.error ?? `HTTP error ${res.status}` };
   }
   return { ok: true, data: await res.json() };
 }
@@ -38,9 +38,9 @@ export function openEventStream({ onOpen, onError, onEvent }) {
 export async function getJson(path) {
   try {
     const res = await fetch(`${BRIDGE_URL}${path}`);
-    if (!res.ok) return { ok: false, error: `Errore HTTP ${res.status}` };
+    if (!res.ok) return { ok: false, error: `HTTP error ${res.status}` };
     return { ok: true, data: await res.json() };
   } catch {
-    return { ok: false, error: `Bridge non raggiungibile su ${BRIDGE_URL}` };
+    return { ok: false, error: `Bridge not reachable at ${BRIDGE_URL}` };
   }
 }

@@ -95,7 +95,7 @@ Il README di root presenta il pitch e rimanda ai documenti operativi. Questa gui
 | `frontend/my-app/src/components/OrderBookPanel.jsx` / `ReplayBar.jsx` | Tabella dei bid con barre di profondità e pulsanti per le due registrazioni demo. |
 | `frontend/my-app/src/hooks/useBook.js` / `src/lib/book.js` | Polling del book e trasformazione dei bid in righe e profondità. |
 | `frontend/my-app/src/lib/book.test.js` | Cinque test offline per righe, barre di profondità, limite livelli e profondità totale. |
-| `frontend/my-app/src/lib/format.js` / `format.test.js` | Formattazione italiana delle quantità TGD e relativi test. |
+| `frontend/my-app/src/lib/format.js` / `format.test.js` | Formattazione in inglese delle quantità TGD (es. 100,000) e relativi test. |
 | `frontend/my-app/src/lib/runState.test.js` | Nove test unitari offline per routing eventi, stati, errori e replay. |
 | `frontend/my-app/e2e/ui.e2e.test.mjs` | Test browser end-to-end separati: usano bridge e UI e inviano una vendita al Testnet. |
 | `frontend/my-app/src/index.css` | Tema Tailwind e palette dell’interfaccia. |
@@ -241,7 +241,7 @@ Il browser usa `VITE_BRIDGE_URL` (default `http://127.0.0.1:8787`) per `POST /ex
 
 `App.jsx` propone quantità iniziale 100.000 TGD e mandato 0,5%, e disabilita i pulsanti di vendita mentre il bridge è disconnesso, offline o occupato. `StatusBar` mostra la connessione; `NaivePanel` presenta fill e slippage della vendita singola; `GuardedPanel` presenta progress bar, slippage e log dei chunk. `OrderBookPanel` mostra i bid in tabella, profondità per livello e profondità aggregata; `useBook` legge `GET /book` all’avvio, ogni 3 secondi e dopo la fine di un run. In offline il bridge restituisce un ladder configurato, marcato `offline: true`, non dati live.
 
-`ReplayBar` offre replay naive e guarded, chiamando `POST /replay` tramite `useBridge`; i pulsanti funzionano anche offline quando il bridge è connesso e libero. Il reducer separa le strategie tramite `mode`, ricostruisce i run da `hello` e dagli eventi, ignora i run di solo `reset` e mostra gli errori HTTP o di rete. `formatTokens()` rende i gruppi delle migliaia in formato italiano. I 16 test di `npm test` sono unitari Node per stato, trasformazione book e formattazione; la suite browser separata `npm run test:e2e` fa una vendita live sul Testnet. I comandi sono `npm run dev`, `npm run build`, `npm run lint`, `npm test` e `npm run test:e2e`.
+`ReplayBar` offre replay naive e guarded, chiamando `POST /replay` tramite `useBridge`; i pulsanti funzionano anche offline quando il bridge è connesso e libero. Il reducer separa le strategie tramite `mode`, ricostruisce i run da `hello` e dagli eventi, ignora i run di solo `reset` e mostra gli errori HTTP o di rete. `formatTokens()` rende i gruppi delle migliaia in formato inglese (100,000). I 16 test di `npm test` sono unitari Node per stato, trasformazione book e formattazione; la suite browser separata `npm run test:e2e` fa una vendita live sul Testnet. I comandi sono `npm run dev`, `npm run build`, `npm run lint`, `npm test` e `npm run test:e2e`.
 
 ## 9. Avvio e comandi
 
