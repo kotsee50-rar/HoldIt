@@ -1,5 +1,5 @@
 <div align=center>
-  <img src="docs/HoldIt!.png" width="128" align="center">
+  <img src="docs/HoldIt.png" width="128" align="center">
   <h1>HoldIt!</h1>
   <p>Stop burning treasury capital! HoldIt! is XRPL's confidential execution engine. It liquidates massive DAO positions with strict slippage control and zero market signaling via automated order slicing.</p>
 </div>
@@ -118,7 +118,7 @@ The live Testnet suites (`npm run test:live`, `npm run test:adversary`) send rea
 ## Resources
 
 - <a href="https://youtu.be/BjG-kX53HP0">Demo video on Youtube</a>
-- [Pitch PDF](docs/HoldIt!_pitch.pdf)
+- [Pitch PDF](docs/HoldIt_pitch.pdf)
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
