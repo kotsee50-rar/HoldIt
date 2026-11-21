@@ -2,6 +2,22 @@
 
 > Documento di orientamento e apprendimento per la repository **IXH26-project**. Descrive ciò che è presente nel codice, spiega i concetti XRPL necessari per leggerlo e separa l’implementazione attuale dalle idee di prodotto ancora da realizzare. Aggiornare questa guida quando cambiano architettura, flussi o comportamento.
 
+## Indice
+
+1. [In breve e percorso rapido](#1-in-breve)
+2. [Stato del progetto](#2-stato-del-progetto-implementato-e-previsto)
+3. [Mappa della repository](#3-mappa-della-repository)
+4. [Architettura](#4-architettura-e-dipendenze-tra-moduli)
+5. [Concetti XRPL](#5-concetti-xrpl-utili-per-leggere-il-codice)
+6. [Wallet e ciclo della demo](#6-i-tre-wallet-e-il-ciclo-della-demo)
+7. [Motore naive e guarded](#7-come-funziona-il-motore-guarded)
+8. [Eventi, bridge e frontend](#8-eventi-dellengine-e-bridge-web)
+9. [Avvio e comandi](#9-avvio-e-comandi)
+10. [Configurazione](#10-configurazione)
+11. [Limiti e lettura dei risultati](#11-note-operative-e-limiti-interpretativi)
+12. [Manutenzione della guida](#12-come-mantenere-questa-guida)
+13. [Glossario](#13-glossario-e-basi)
+
 ## 1. In breve
 
 HoldIt! è una prova di concetto di un execution engine per vendere un token IOU sul DEX nativo di XRP Ledger (XRPL). Il problema modellato è quello di una tesoreria che vende una quantità elevata: un ordine grande può consumare i bid migliori e ottenere prezzi progressivamente peggiori, cioè subire slippage.
@@ -11,7 +27,17 @@ Il progetto rende confrontabili due strategie:
 - **Naive**: un unico ordine di vendita per l’intera quantità, senza soglia di prezzo.
 - **Guarded**: misura il book, calcola un prezzo minimo in base alla tolleranza scelta e vende in chunk con un limite verificato dal ledger.
 
-La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto per creare e ricostituire la liquidità. Di conseguenza, il risultato dimostra il funzionamento del meccanismo in un mercato simulato: non è una misura di performance su liquidità reale. I termini tecnici sono spiegati nel glossario (sezione 13), che parte dalle basi della blockchain.
+La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto per creare e ricostituire la liquidità. Di conseguenza, dimostra il comportamento del meccanismo in un mercato simulato, non una performance su liquidità reale.
+
+### Percorso rapido
+
+1. `setup.js` prepara tre account di test e il token TGD.
+2. `marketMaker.js` pubblica i bid che rappresentano la liquidità del mercato dimostrativo.
+3. `naiveSell.js` esegue una vendita unica; `executeOrder.js` prova invece una vendita protetta a tranche.
+4. `demo.js` confronta le strategie da terminale. In alternativa, `server.js` espone le stesse operazioni al frontend React.
+5. Il frontend mostra book, avanzamento e risultati; `server.js` può anche riprodurre run registrati senza collegarsi al ledger.
+
+Per orientarsi, leggere prima le sezioni 3–4 (file e collegamenti), poi 6–8 (flusso e comportamento) e infine 9–11 (avvio, configurazione e limiti). Il glossario della sezione 13 è un riferimento per i termini XRPL.
 
 ## 2. Stato del progetto: implementato e previsto
 
@@ -33,16 +59,15 @@ La demo gira su **XRPL Testnet** e usa un market maker controllato dal progetto 
 
 - Deposito o custodia di token da parte di utenti, gestione di mandati multiutente o un backend di produzione.
 - Protezione privata o garanzia contro front-running/MEV. L’ordine, la soglia e le transazioni XRPL restano visibili secondo il normale funzionamento del ledger.
-- Smart Escrow, XLS-0100, circuiti RISC Zero o prove ZK. Sono idee di evoluzione menzionate nel README, non componenti implementati.
 - Esecuzione automatica dei test in CI: nessuna pipeline lancia i test. I test live, avversario e del browser vanno eseguiti a mano, perché inviano transazioni reali sul testnet.
 
-Il README di root contiene il pitch e anche elementi futuri; descrive ancora lo stack frontend come Next.js, mentre l’app inclusa usa Vite. La vista book è ora implementata nell’MVP, ma mostra i bid TGD del ladder simulato, non un mercato esterno né “sell wall” indipendenti. Per lo stato implementato, fare riferimento a questa guida e ai moduli in `agent/` e `frontend/my-app/`.
+Il README di root presenta il pitch e rimanda ai documenti operativi. Questa guida descrive il comportamento verificabile nei moduli del repository; il runbook è invece orientato alla demo e i README di `agent/` e `frontend/my-app/` raccolgono istruzioni rapide per ciascun package.
 
 ## 3. Mappa della repository
 
 | Percorso | Responsabilità |
 |---|---|
-| `README.md` | Pitch, problema, proposta di soluzione e idee di prodotto. Include anche elementi futuri. |
+| `README.md` | Pitch, problema, proposta di soluzione e limiti dichiarati del prototipo. |
 | `agent/README.md` | Avvio rapido, comandi, configurazione, note XRPL e API del bridge. |
 | `agent/package.json` / `agent/package-lock.json` | Dipendenze, comandi npm, versione minima Node e lock delle dipendenze. |
 | `agent/config.js` | Carica `agent/.env`, definisce rete, token, wallet e parametri del book e dell’esecuzione. |
@@ -58,8 +83,10 @@ Il README di root contiene il pitch e anche elementi futuri; descrive ancora lo 
 | `agent/test/xrplHelpers.test.js` | Test offline per conversioni, costruzione IOU, prezzo dei bid e gestione di fill uccisi. |
 | `agent/test/server.test.js` | Test offline per risposte HTTP, validazione input, CORS, lock, replay e modalità offline. |
 | `agent/test/live.test.js` | Cinque test d’integrazione XRPL Testnet per ladder, vendita guarded, price floor e contratto eventi naive e guarded. |
+| `agent/test/adversary.live.test.js` | Tre test Testnet sull’effetto di un book spostato prima della vendita e sul riferimento di prezzo ancorato. |
 | `agent/test/fixtures/fill-1000.json` | Metadati validati di una vendita Testnet usati dal test unitario di `parseFill()`. |
 | `frontend/my-app/package.json` / `package-lock.json` | App separata React 19 + Vite 8, Tailwind CSS 4, ESLint e script dev/build/lint/test. |
+| `frontend/my-app/index.html`, `src/main.jsx`, `vite.config.js` | Entrata dell’app browser e configurazione del dev server/build Vite. |
 | `frontend/my-app/src/App.jsx` | Schermata principale: importo, mandato, stato bridge e pannelli delle due strategie. |
 | `frontend/my-app/src/lib/bridge.js` | Client browser HTTP/SSE verso il bridge; il browser non riceve i seed. |
 | `frontend/my-app/src/hooks/useBridge.js` | Apre lo stream SSE, aggiorna lo stato e invia `POST /execute`. |
@@ -70,14 +97,17 @@ Il README di root contiene il pitch e anche elementi futuri; descrive ancora lo 
 | `frontend/my-app/src/lib/book.test.js` | Cinque test offline per righe, barre di profondità, limite livelli e profondità totale. |
 | `frontend/my-app/src/lib/format.js` / `format.test.js` | Formattazione italiana delle quantità TGD e relativi test. |
 | `frontend/my-app/src/lib/runState.test.js` | Nove test unitari offline per routing eventi, stati, errori e replay. |
+| `frontend/my-app/e2e/ui.e2e.test.mjs` | Test browser end-to-end separati: usano bridge e UI e inviano una vendita al Testnet. |
 | `frontend/my-app/src/index.css` | Tema Tailwind e palette dell’interfaccia. |
+| `images/HoldIt!.png`, `frontend/my-app/public/favicon.svg` | Marchio del README e favicon della UI. |
+| `docs/HoldIt_pitch.pdf` | Materiale di pitch del progetto; non è codice eseguito dall’app. |
 | `agent/recordings/demo-naive.json`, `agent/recordings/demo-guarded.json` | Registrazioni curate per riprodurre le demo senza connessione XRPL. |
 | `agent/recordings/live/` | Registrazioni create dal bridge dopo un run live; cartella esclusa da Git. |
 | `docs/DEMO_RUNBOOK.md` | Checklist operativa per il giorno della demo, inclusi uso del frontend, replay offline e troubleshooting. |
 | `docs/PITCH_MEV_NOTE.md` | Nota per il pitch: distingue le affermazioni supportate, le cautele e i limiti della demo sul tema MEV/front-running. |
 | `agent/connect-test.js` | Smoke check manuale di connessione e faucet Testnet. |
 | `docs/` | Guida progetto, runbook operativo e nota MEV per il pitch. |
-| `frontend/my-app/src/App.css`, `src/assets/` React/Vite | File dello starter Vite attualmente non importati dall’app attiva; il layout usa classi Tailwind e la grafica del progetto. |
+| `frontend/my-app/src/App.css`, `src/assets/hero.png`, `src/assets/react.svg`, `src/assets/vite.svg`, `frontend/my-app/public/icons.svg` | File non importati dall’app attiva o non referenziati dalla pagina; residui/asset non utilizzati, non parti del flusso applicativo. |
 
 ## 4. Architettura e dipendenze tra moduli
 
@@ -212,7 +242,7 @@ Il browser usa `VITE_BRIDGE_URL` (default `http://127.0.0.1:8787`) per `POST /ex
 
 `App.jsx` propone quantità iniziale 100.000 TGD e mandato 0,5%, e disabilita i pulsanti di vendita mentre il bridge è disconnesso, offline o occupato. `StatusBar` mostra la connessione; `NaivePanel` presenta fill e slippage della vendita singola; `GuardedPanel` presenta progress bar, slippage e log dei chunk. `OrderBookPanel` mostra i bid in tabella, profondità per livello e profondità aggregata; `useBook` legge `GET /book` all’avvio, ogni 3 secondi e dopo la fine di un run. In offline il bridge restituisce un ladder configurato, marcato `offline: true`, non dati live.
 
-`ReplayBar` offre replay naive e guarded, chiamando `POST /replay` tramite `useBridge`; i pulsanti funzionano anche offline quando il bridge è connesso e libero. Il reducer separa le strategie tramite `mode`, ricostruisce i run da `hello` e dagli eventi, ignora i run di solo `reset` e mostra gli errori HTTP o di rete. `formatTokens()` rende i gruppi delle migliaia in formato italiano. I 16 test frontend sono unitari Node per stato, trasformazione book e formattazione; non ci sono test DOM/browser. I comandi sono `npm run dev`, `npm run build`, `npm run lint` e `npm test`.
+`ReplayBar` offre replay naive e guarded, chiamando `POST /replay` tramite `useBridge`; i pulsanti funzionano anche offline quando il bridge è connesso e libero. Il reducer separa le strategie tramite `mode`, ricostruisce i run da `hello` e dagli eventi, ignora i run di solo `reset` e mostra gli errori HTTP o di rete. `formatTokens()` rende i gruppi delle migliaia in formato italiano. I 16 test di `npm test` sono unitari Node per stato, trasformazione book e formattazione; la suite browser separata `npm run test:e2e` fa una vendita live sul Testnet. I comandi sono `npm run dev`, `npm run build`, `npm run lint`, `npm test` e `npm run test:e2e`.
 
 ## 9. Avvio e comandi
 
@@ -264,7 +294,7 @@ Le variabili sono lette da `agent/.env`; i default e i commenti sono in `agent/.
 | `DEMO_AMOUNT`, `MAX_SLIPPAGE_PCT` | Valori predefiniti della demo e del mandato guarded. |
 | `CHUNK_MAX`, `PARTICIPATION`, `MIN_CHUNK` | Tetto e logica di dimensionamento dei chunk. |
 | `POLL_MS`, `LIQUIDITY_TIMEOUT_MS` | Frequenza di rilettura del book e attesa massima della liquidità. |
-| `TREASURY_MINT` | Quantità minima usata da `topUpTreasury()` quando serve un’emissione aggiuntiva. |
+| `TREASURY_MINT` | Quantità minima emessa da `topUpTreasury()` quando il saldo della tesoreria non basta: la mint è il maggiore tra `TREASURY_MINT` e il mancante. |
 | `SERVER_HOST`, `SERVER_PORT`, `ALLOWED_ORIGINS` | Binding, porta e origin browser consentiti dal bridge. |
 
 I valori di `LADDER_DROPS_PCT` e `LADDER_SIZES` devono avere lo stesso numero di elementi. Il totale token del ladder è la somma delle size; gli XRP necessari dipendono da `size × price` per ogni livello, oltre a riserve ledger e fee.
@@ -280,7 +310,7 @@ Il frontend usa inoltre `VITE_BRIDGE_URL` (opzionale; default `http://127.0.0.1:
 - **Il prezzo-floor è applicato a ogni chunk.** Ciò protegge dal ricevere meno del limite per i fill dell’offerta; la disponibilità di liquidità e l’esito completo restano condizioni separate.
 - **Il refill e i test di rete dipendono da Testnet e faucet.** Il faucet può essere rate-limited; il codice tenta il top-up e restituisce un errore leggibile se fallisce.
 - **Ordini e dati di mercato sono pubblici.** Non descrivere l’attuale motore come privato o resistente al MEV. Sul rischio di front-running su XRPL, oggetto di un dibattito pubblico nel 2026, vedere `docs/PITCH_MEV_NOTE.md`.
-- **Portata dei test.** `npm test` eseguito da `agent/` copre 23 casi offline, inclusa la lettura di un fixture di metadata reale; lo stesso comando da `frontend/my-app/` copre 16 test unitari di stato, book e formattazione. `npm run test:live` da `agent/` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto ed eventi naive/guarded), richiede seed e modifica temporaneamente il ledger di test. Il test nel browser (`npm run test:e2e` in `frontend/my-app/`) e il test avversario (`npm run test:adversary` in `agent/`) sono suite separate, lanciate a mano, con transazioni reali sul testnet.
+- **Portata dei test.** `npm test` eseguito da `agent/` copre 24 casi offline (8 su `xrplHelpers`, 16 sul bridge), inclusa la lettura di un fixture di metadata reale; lo stesso comando da `frontend/my-app/` copre 16 test unitari di stato, book e formattazione. `npm run test:live` da `agent/` esegue 5 test sulla Testnet (livelli, vendita guarded, price floor diretto ed eventi naive/guarded), richiede seed e modifica temporaneamente il ledger di test. Il test nel browser (`npm run test:e2e` in `frontend/my-app/`) e il test avversario (`npm run test:adversary` in `agent/`) sono suite separate, lanciate a mano, con transazioni reali sul testnet.
 - **Credenziali.** `agent/.env` è escluso da Git. Conservare solo seed Testnet e non condividere il file.
 
 ## 12. Come mantenere questa guida
@@ -363,8 +393,3 @@ Il rischio di front-running su XRPL è oggetto di dibattito pubblico (giugno 202
 - **Halted**: la vendita si è fermata senza completare la quantità richiesta. `reason` spiega il motivo.
 - **Mandato**: la tolleranza di slippage che la tesoreria accetta, espressa in percentuale.
 - **Replay**: la riproduzione di una vendita già registrata. Non tocca il ledger.
-
-### Termini delle tecnologie future (non implementate)
-
-- **Smart Escrow (XLS-0100)**: una proposta per escrow programmabili su XRPL. Nel progetto è solo un'idea di evoluzione.
-- **Prova a conoscenza zero (ZK, zero-knowledge)**: una prova crittografica che un'affermazione è vera senza rivelare i dati che la rendono vera. Nel progetto è solo un'idea di evoluzione, con RISC Zero come possibile strumento.
