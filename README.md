@@ -22,7 +22,7 @@ HoldIt! sells the position in smaller chunks. Before each chunk it reads the **D
 But what does **HoldIt!** do, in simple words?
 - **It limits the price impact** of a sale compared with one market order, and the minimum price on each chunk is enforced by the ledger.
 - **It does not hide the position.** The order book and every transaction are public on the XRPL. Anyone can see the chunks as they execute.
-- **It does not prevent front-running.** A visible sale can still be front-run. The on-chain minimum limits how far the price can be pushed against the treasury, but it does not stop the attack. See `docs/PITCH_MEV_NOTE.md`.
+- **It does not prevent front-running.** A visible sale can still be front-run. The on-chain minimum limits how far the price can be pushed against the treasury, but it does not stop the attack.
 - **Both sales are measured against the mandate's reference price** (`BASE_PRICE`), not against the book. The engine's default (no anchor) uses the best bid at the start; that default is a known limit, see `agent/test/adversary.live.test.js`.
 - **It runs on the XRPL testnet.** The demo uses simulated tokens and a simulated market maker. It is not connected to a live market and is not audited.
 
@@ -46,7 +46,7 @@ Live runs are saved under `agent/recordings/live/` (not committed). Two curated 
 - `frontend`: 16 unit tests (`npm test`) and 6 browser tests (`npm run test:e2e`, needs the bridge and the dev server running).
 
 ### Running the demo
-See `docs/DEMO_RUNBOOK.md` for the checklist and `docs/PROJECT_GUIDE.md` for a full walkthrough. Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
+The pitch deck is `docs/HoldIt!_pitch.pdf` and a recording of a live run on the testnet is `docs/1121.mp4`. Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
 
 ## Resources
 
