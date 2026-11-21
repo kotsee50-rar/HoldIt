@@ -1,39 +1,50 @@
 <div align=center>
   <img src="images/HoldIt!.png" width="128" align="center">
   <h1>HoldIt!</h1>
-  <p>Stop burning treasury capital! HoldIt! is XRPL's confidential execution engine. It liquidates massive DAO positions with strict slippage control and zero market signaling via automated order slicing.</p>
+  <p>HoldIt! is an execution engine for DAO treasuries on the XRP Ledger. It sells a large token position in depth-aware chunks, with an on-chain minimum price on every chunk, and it shows the result next to a naive single market sell.</p>
 </div>
 
 ## Index
 - <a href="https://github.com/kotsee50-rar/HoldIt#description">Description</a>
+- <a href="https://github.com/kotsee50-rar/HoldIt#what-it-does-and-what-it-does-not">What it does and what it does not</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#technical-details">Technical details</a>
 - <a href="https://github.com/kotsee50-rar/HoldIt#authors">Authors</a>
 
 ## Description
-###  The Problem: The Transparency Penalty on Public Ledgers
-When a **DAO** decides to liquidate a large token position (e.g., to pay contributors), a single large market order instantly signals intent. Front-running bots and market makers step in, the order book collapses, and slippage can easily destroy 10% to 20% of the treasury's capital before the transaction settles. On a transparent **DEX** like XRPL, there was no native, institutional-grade tool to execute large orders without moving the market against you.
+### The Problem: Large sales move the market
+When a **DAO** sells a large token position (for example, to pay contributors), a single market order removes the best bids at once. The price falls while the order runs, and the treasury receives much less than the quoted price. On the XRPL **DEX**, the order book is public, so the size and timing of a sale are visible to everyone.
+
 ### The Solution: HoldIt!
-**HoldIt!** is a non-custodial, **B2B** execution engine for **DAOs** and corporate treasuries on the XRP Ledger. It allows a treasury to set a confidential mandate (e.g., "Sell 20,000 tokens, but accept no more than 0.5% slippage"). Instead of a single market dump, HoldIt! automatically slices the order into depth-aware micro-transactions. The engine constantly monitors the XRPL **DEX** order book and executes chunks only when the liquidity is optimal, ensuring the treasury's capital is protected while the full position size remains hidden from the public eye.
-### Technical Architecture & Implementation
-HoldIt! is not just a trading script; it is a fully-fledged, native XRPL application.
-- **On-Chain Price Floors** (The Ledger as Guardian): Every chunk executed is an OfferCreate transaction using the tfImmediateOrCancel and tfSell flags. We set a strict TakerPays (minimum acceptable price) for each chunk. If the market crashes mid-execution, the XRPL consensus natively kills the transaction. The ledger itself enforces the mandate.
-- **Dynamic Order Slicing**: The backend (Node.js) continuously polls the **DEX** to calculate the absolute maximum safe chunk size based on real-time order book depth. We even implemented an "in-band liquidity" check: if the book is too thin, **HoldIt!** pauses and waits for the market to refill before continuing.
-- **Real-Time Mission Control Bridge**: The backend communicates with the React frontend via an **HTTP/SSE** (Server-Sent Events) bridge. We built a custom server that streams execution logs in real-time, allowing the UI to visualize a side-by-side comparison: the "Naive Way" (a single order destroying value) vs. the **HoldIt! Engine** (preserving capital chunk-by-chunk).
-- **Demo Resilience** (Replay Mode): To ensure a flawless pitch, our bridge automatically records live runs. If the testnet experiences latency during the presentation, the /replay endpoint can stream the recorded events natively to the frontend.
-- **Complete Test Environment**: We built a custom setup.js to mint test tokens, establish trustlines, and configure DefaultRipple. We also engineered a background Market Maker (marketMaker.js) that seeds and automatically refills a bid ladder, allowing us to simulate a realistic, volatile market environment for our tests. A doctor.js CLI utility ensures all nodes, wallets, and dependencies are healthy before the demo.
-### Why XRPL?
-XRPL's 3-5 second deterministic finality and negligible fees make it the only blockchain capable of executing high-frequency, micro-transaction slicing natively without burning capital on gas fees. **HoldIt!** turns XRPL's native **DEX** into a safe, execution-friendly environment for institutional liquidity.
+HoldIt! sells the position in smaller chunks. Before each chunk it reads the **DEX** order book and sells only when enough liquidity is inside the mandate's price band. Each chunk is an `OfferCreate` with `tfImmediateOrCancel` and `tfSell`, and its `TakerPays` field is the minimum XRP the chunk accepts. If the price moves below that minimum, the ledger cancels the chunk and nothing is sold at a worse price.
+
+## What it does and what it does not
+- **It limits the price impact** of a sale compared with one market order, and the minimum price on each chunk is enforced by the ledger.
+- **It does not hide the position.** The order book and every transaction are public on the XRPL. Anyone can see the chunks as they execute.
+- **It does not prevent front-running.** A visible sale can still be front-run. The on-chain minimum limits how far the price can be pushed against the treasury, but it does not stop the attack. See `docs/PITCH_MEV_NOTE.md`.
+- **The floor is set from the best bid when the run starts.** If someone moves the book before the run, the floor moves too. This is a known limit; see `agent/test/adversary.live.test.js`.
+- **It runs on the XRPL testnet.** The demo uses simulated tokens and a simulated market maker. It is not connected to a live market and is not audited.
 
 ## Technical details
 
-**HoldIt!** (XRPL testnet) compares naive vs guarded token sales.
-### Architecture:
-Config/helpers; setup creates issuer/treasury/MM wallets, *DefaultRipple*, trustlines, mint; *marketMaker* seeds/refills a 10-level bid ladder; *naiveSell* does one IOC market sell; *executeOrder* sells depth-aware chunks; *Node http/SSE bridge* (/health,/book,/reset,/execute,/replay); doctor, demo, recordings. Tech: *Node ESM*, *xrpl.js*, *dotenv*, built-in http/fs/crypto.
-### Challenges:
-On-chain slippage floor via *TakerPays*, batched sequence-derived tx submission, validated-metadata fill parsing, *DefaultRipple*-before-trustlines ordering, IOU/drop precision, single-run lock, offline replay.
-### Beneath the surface:
-Guarded engine reads book, computes `floor=ref(1-slip)`
-, waits for in-band liquidity, sends *OfferCreate tfImmediateOrCancel|tfSell* with `TakerPays=chunkfloor`, parses fills, halts on timeout/5 kills. MM refills fixed-price bids; SSE streams events; recordings replay without ledger.
+**HoldIt!** (XRPL testnet) compares a naive market sale with a guarded sale on the same order book.
+
+### Architecture
+- `agent/`: Node ESM engine. `setup.js` creates the issuer, treasury and market-maker wallets, sets `DefaultRipple`, trust lines and the initial mint. `marketMaker.js` seeds and refills a 10-level bid ladder. `naiveSell.js` makes one IOC market sell. `executeOrder.js` runs the guarded sale. `server.js` is a Node `http` bridge with SSE (`/health`, `/book`, `/reset`, `/execute`, `/replay`). `doctor.js` checks the setup before a demo.
+- `frontend/my-app/`: React and Vite interface. It shows the order book and the two runs side by side, and it replays recorded runs.
+- Tech: Node.js (ESM), xrpl.js, dotenv, React, Vite, Tailwind CSS.
+
+### Guarded sale
+The engine reads the book and sets `floor = reference × (1 − maxSlippage)`. It waits until enough liquidity is inside the band, then sends `OfferCreate` with `tfImmediateOrCancel | tfSell` and `TakerPays` set to the chunk's minimum. It parses the fills from the validated metadata. It halts on timeout or after 5 consecutive killed chunks. The market maker refills the bids at fixed prices, and the bridge streams the events to the frontend.
+
+### Recordings and replay
+Live runs are saved under `agent/recordings/live/` (not committed). Two curated runs are committed as `agent/recordings/demo-naive.json` and `demo-guarded.json`. The replay endpoint plays them back without contacting the ledger, so the demo keeps working if the testnet is slow.
+
+### Testing
+- `agent`: 24 offline tests (`npm test`), 5 live testnet tests (`npm run test:live`), 3 adversary tests on the testnet (`npm run test:adversary`).
+- `frontend`: 16 unit tests (`npm test`) and 6 browser tests (`npm run test:e2e`, needs the bridge and the dev server running).
+
+### Running the demo
+See `docs/DEMO_RUNBOOK.md` for the checklist and `docs/PROJECT_GUIDE.md` for a full walkthrough. Setup and commands are in `agent/README.md` and `frontend/my-app/README.md`.
 
 ## Authors
 __HoldIt!__ is a project realized for the _IXH26 Italian XRPL Hackathon_ event by the __Ghost Buggers__ team, composed by:
